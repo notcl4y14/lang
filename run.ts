@@ -1,5 +1,6 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
+let utils = require("util");
 
 export function run(filename: string, code: string, args: string[]) {
 	var showLexer = args.includes("--lexer");
@@ -16,5 +17,5 @@ export function run(filename: string, code: string, args: string[]) {
 	var ast = parser.parse();
 
 	if (showParser)
-		console.log(ast);
+		console.log(utils.inspect(ast, {showHidden: false, depth: null, colors: true}));
 }

@@ -1,4 +1,5 @@
 import { Token, TokenType } from "./token";
+import { newNode, NumericLiteralNode, StringLiteralNode, LiteralNode, BinaryExprNode } from "./nodes";
 import { either } from "./utils/general";
 
 export class Parser {
@@ -69,10 +70,9 @@ export class Parser {
 			var operator = this.yum().value;
 			var right = this.parseMultiplicativeExpr();
 
-			return {
-				type: "BinaryExpr",
-				left, operator, right
-			}
+			return newNode(
+				new BinaryExprNode(left, operator, right),
+				left.pos, right.pos);
 		}
 
 		return left;
@@ -88,13 +88,12 @@ export class Parser {
 			&& this.at().type == TokenType.BinOp
 			&& operators.includes(this.at().value)
 		) {
-			var operator = this.yum();
+			var operator = this.yum().value;
 			var right = this.parseLiteral();
 
-			return {
-				type: "BinaryExpr",
-				left, operator, right
-			}
+			return newNode(
+				new BinaryExprNode(left, operator, right),
+				left.pos, right.pos);
 		}
 
 		return left;
@@ -108,35 +107,31 @@ export class Parser {
 
 		// NumericLiteral
 		if (token.type == TokenType.Number) {
-			return {
-				type: "NumericLiteral",
-				value: token.value
-			}
+			return newNode(
+				new NumericLiteralNode(token.value),
+				token.pos.left, token.pos.right);
 
 		// StringLiteral
 		} else if (token.type == TokenType.String) {
-			return {
-				type: "StringLiteral",
-				value: token.value
-			}
+			return newNode(
+				new StringLiteralNode(token.value),
+				token.pos.left, token.pos.right);
 
 		// Identifier | Literals
 		} else if (token.type == TokenType.Ident) {
 			// Literal
 			if (either(token.value, "undefined", "null", "true", "false")) {
-				return {
-					type: "Literal",
-					value: token.value
-				}
+				return newNode(
+					new LiteralNode(token.value),
+					token.pos.left, token.pos.right);
 			}
 
 			// Identifier
-			return {
-				type: "Identifier",
-				value: token.value
-			}
+			return newNode(
+				new NumericLiteralNode(token.value),
+				token.pos.left, token.pos.right);
 		}
 
-		return this.tokens[this.tokens.length];
+		return newNode(new LiteralNode("undefined"), token.pos.left, token.pos.right);
 	}
 }

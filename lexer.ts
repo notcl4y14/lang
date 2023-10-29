@@ -1,32 +1,33 @@
 import { Token, TokenType } from "./token";
+import { Position } from "./position";
 let strings = require("./strings.json");
 
 export class Lexer {
 	public filename : string;
 	public code : string;
-	public pos : number;
+	public pos : Position;
 
 	public constructor(filename: string, code: string) {
 		this.filename = filename;
 		this.code = code;
-		this.pos = -1;
+		this.pos = new Position(filename, -1, 0, -1);
 
 		this.yum();
 	}
 
 	// returns the character lexer is at
 	public at(range: number = 1): string {
-		return this.code.substr(this.pos, range);
+		return this.code.substr(this.pos.index, range);
 	}
 
 	// moves to the next character
 	public yum(delta: number = 1): void {
-		this.pos += delta;
+		this.pos.advance(this.at(), delta);
 	}
 
 	// checks if lexer has not reached the end of file
 	public notEof(): boolean {
-		return this.pos < this.code.length;
+		return this.pos.index < this.code.length;
 	}
 
 	// ------------------------------------------------------------------------------------------
@@ -45,10 +46,10 @@ export class Lexer {
 			
 			// BinOp
 			} else if (strings.binop.includes(this.at())) {
-				tokens.push( new Token(TokenType.BinOp, this.at()) );
+				tokens.push( new Token(TokenType.BinOp, this.at(), this.pos.clone()) );
 			// UnOp
 			} else if (strings.unop.includes(this.at())) {
-				tokens.push( new Token(TokenType.UnOp, this.at()) );
+				tokens.push( new Token(TokenType.UnOp, this.at(), this.pos.clone()) );
 			// Number
 			} else if (strings.digits.includes(this.at())) {
 				tokens.push( this.makeNumber() );
@@ -63,13 +64,14 @@ export class Lexer {
 			this.yum();
 		}
 
-		tokens.push( new Token(TokenType.EOF, null) );
+		tokens.push( new Token(TokenType.EOF, null, this.pos.clone()) );
 
 		return tokens;
 	}
 
 	// makes the comment token
 	public makeComment(): Token {
+		var posLeft = this.pos.clone();
 		var str = "";
 
 		// skip "//"
@@ -81,11 +83,12 @@ export class Lexer {
 			this.yum();
 		}
 
-		return new Token(TokenType.Comment, str);
+		return new Token(TokenType.Comment, str, posLeft, this.pos.clone());
 	}
 
 	// makes the multiline comment token
 	public makeMultilineComment(): Token {
+		var posLeft = this.pos.clone();
 		var str = "";
 
 		// skip "/*"
@@ -97,11 +100,12 @@ export class Lexer {
 			this.yum();
 		}
 
-		return new Token(TokenType.Comment, str);
+		return new Token(TokenType.Comment, str, posLeft, this.pos.clone());
 	}
 
 	// makes the number token
 	public makeNumber(): Token {
+		var posLeft = this.pos.clone();
 		var numStr = "";
 		var float = false;
 
@@ -125,14 +129,15 @@ export class Lexer {
 
 		// parse a number via parseFloat() if the number is float
 		if (float)
-			return new Token(TokenType.Number, parseFloat(numStr));
+			return new Token(TokenType.Number, parseFloat(numStr), posLeft, this.pos.clone());
 
 		// otherwise parseInt() :P
-		return new Token(TokenType.Number, parseInt(numStr));
+		return new Token(TokenType.Number, parseInt(numStr), posLeft, this.pos.clone());
 	}
 
 	// makes the string token
 	public makeString(): Token {
+		var posLeft = this.pos.clone();
 		var quote = this.at();
 		var str = "";
 
@@ -146,11 +151,12 @@ export class Lexer {
 			this.yum();
 		}
 
-		return new Token(TokenType.String, str);
+		return new Token(TokenType.String, str, posLeft, this.pos.clone());
 	}
 
 	// makes the identifier token
 	public makeIdent(): Token {
+		var posLeft = this.pos.clone();
 		var ident = "";
 
 		// while the character matches a-z, A-Z, _ or 1234567890
@@ -164,9 +170,9 @@ export class Lexer {
 
 		// return a keyword token if the identifier is a keyword
 		if (strings.keywords.includes(ident))
-			return new Token(TokenType.Keyword, ident);
+			return new Token(TokenType.Keyword, ident, posLeft, this.pos.clone());
 
 		// otherwise return an identifier token :P
-		return new Token(TokenType.Ident, ident);
+		return new Token(TokenType.Ident, ident, posLeft, this.pos.clone());
 	}
 }

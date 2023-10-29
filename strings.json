@@ -1,0 +1,8 @@
+{
+	"binop": "+-*/%",
+	"unop": "!",
+	"digits": "1234567890",
+	"quotes": "\"'`",
+	"ident": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_",
+	"keywords": ["var", "let", "if", "else", "while", "for", "function"]
+}

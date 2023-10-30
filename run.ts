@@ -16,6 +16,11 @@ export function run(filename: string, code: string, args: string[]) {
 	var parser = new Parser(filename, tokens);
 	var ast = parser.parse();
 
+	if (ast.error) {
+		console.log(ast.error.asString());
+		return;
+	}
+
 	if (showParser)
-		console.log(utils.inspect(ast, {showHidden: false, depth: null, colors: true}));
+		console.log(utils.inspect(ast.node, {showHidden: false, depth: null, colors: true}));
 }

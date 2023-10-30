@@ -1,2 +1,2 @@
 @echo off
-ts-node . %*
+ts-node --project ./tsconfig.json . %*

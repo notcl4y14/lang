@@ -12,6 +12,18 @@ export enum TokenType {
 	EOF
 }
 
+export var TokenTypeStr: string[] = [
+	"Binary Operator",
+	"Unary Operator",
+	"Number",
+	"String",
+	"Identifier",
+	"Keyword",
+
+	"Comment",
+	"EOF"
+]
+
 export class Token {
 	public type: TokenType;
 	public value: any;

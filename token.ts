@@ -5,8 +5,12 @@ export enum TokenType {
 	UnOp,
 	Number,
 	String,
+    Paren,
+    Bracket,
+    Brace,
 	Ident,
 	Keyword,
+    Symbol,
 
 	Comment,
 	EOF
@@ -17,8 +21,12 @@ export var TokenTypeStr: string[] = [
 	"Unary Operator",
 	"Number",
 	"String",
+    "Parenthesis",
+    "Bracket",
+    "Brace",
 	"Identifier",
 	"Keyword",
+    "Symbol",
 
 	"Comment",
 	"EOF"

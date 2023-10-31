@@ -50,6 +50,15 @@ export class Lexer {
 			// UnOp
 			} else if (strings.unop.includes(this.at())) {
 				tokens.push( new Token(TokenType.UnOp, this.at(), this.pos.clone()) );
+            // Paren
+			} else if (strings.paren.includes(this.at())) {
+				tokens.push( new Token(TokenType.Paren, this.at(), this.pos.clone()) );
+            // Brackets
+			} else if (strings.brackets.includes(this.at())) {
+				tokens.push( new Token(TokenType.Bracket, this.at(), this.pos.clone()) );
+            // Braces
+			} else if (strings.braces.includes(this.at())) {
+				tokens.push( new Token(TokenType.Braces, this.at(), this.pos.clone()) );
 			// Number
 			} else if (strings.digits.includes(this.at())) {
 				tokens.push( this.makeNumber() );

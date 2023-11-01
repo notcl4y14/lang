@@ -14,7 +14,7 @@ export class Position {
 
 	// advances the index and the column
 	// resets column and advances line when the char is "\n"
-	public advance(char: string, delta: number = 1) {
+	public advance(char?: string, delta: number = 1) {
 		this.index += delta;
 		this.column += delta;
 
@@ -28,6 +28,6 @@ export class Position {
 
 	// clones Position with the same properties
 	public clone() {
-		return new Position(this.filename, this.index, this.column, this.line);
+		return new Position(this.filename, this.index, this.line, this.column);
 	}
 }

@@ -12,8 +12,8 @@ export class Error {
 	// returns an error as a string
 	public asString() {
 		var	filename = this.position.filename,
-			line = this.position.line,
-			column = this.position.column,
+			line = this.position.line + 1,
+			column = this.position.column + 1,
 			details = this.details;
 
 		return `${filename}:${line}:${column}: ${details}`;

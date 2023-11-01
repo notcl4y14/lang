@@ -6,6 +6,7 @@ import {
 	NumericLiteralNode,
 	StringLiteralNode,
 	LiteralNode,
+	UnaryExprNode,
 	BinaryExprNode } from "./nodes";
 import { either } from "./utils/general";
 
@@ -113,11 +114,11 @@ export class Parser {
 		var left = res.register(this.parseMultiplicativeExpr());
 
 		if (res.error)
-				return res;
+			return res;
 
 		while
 			(this.notEof()
-			&& this.at().type == TokenType.BinOp
+			&& this.at().type == TokenType.Operator
 			&& operators.includes(this.at().value)
 		) {
 			var operator = this.yum().value;
@@ -127,8 +128,8 @@ export class Parser {
 				return res;
 
 			return res.success(newNode(
-				new BinaryExprNode(left.node, operator, right.node),
-				left.node.pos, right.node.pos));
+				new BinaryExprNode(left, operator, right),
+				left.pos, right.pos));
 		}
 
 		return res.success(left);
@@ -140,9 +141,12 @@ export class Parser {
 		var operators = ["*", "/", "%"];
 		var left = res.register(this.parseLiteral());
 
+		if (res.error)
+			return res;
+
 		while
 			(this.notEof()
-			&& this.at().type == TokenType.BinOp
+			&& this.at().type == TokenType.Operator
 			&& operators.includes(this.at().value)
 		) {
 			var operator = this.yum().value;
@@ -152,8 +156,8 @@ export class Parser {
 				return res;
 
 			return res.success(newNode(
-				new BinaryExprNode(left.node, operator, right.node),
-				left.node.pos, right.node.pos));
+				new BinaryExprNode(left, operator, right),
+				left.pos, right.pos));
 		}
 
 		return res.success(left);
@@ -191,6 +195,33 @@ export class Parser {
 			return res.success(newNode(
 				new NumericLiteralNode(token.value),
 				token.pos.left, token.pos.right));
+
+		// ------------------------------------------------------------------------------------------
+
+		// UnaryExpr
+		} else if (token.match(TokenType.Operator, "-") || token.match(TokenType.Operator, "!")) {
+			var node = res.register(this.parseLiteral());
+
+			if (res.error)
+				return res;
+
+			return res.success(newNode(
+				new UnaryExprNode(token.value, node),
+				token.pos.left, token.pos.right));
+
+		// Parenthesised expression
+		} else if (token.match(TokenType.Paren, "(")) {
+			var node = res.register(this.parseExpr());
+
+			if (res.error)
+				return res;
+
+			if (this.at().match(TokenType.Paren, ")")) {
+				res.register(this.yum());
+				return res.success(node);
+			}
+
+			return res.failure(new Error(this.at().pos.left, "Expected ')'"));
 		}
 
 		// return newNode(new LiteralNode("undefined"), token.pos.left, token.pos.right);

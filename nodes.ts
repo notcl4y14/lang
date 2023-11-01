@@ -58,6 +58,18 @@ export class LiteralNode extends Node {
 // --------------------------------------------
 // Expressions
 // --------------------------------------------
+export class UnaryExprNode extends Node {
+	public type: string = "UnaryExpr";
+	public prefix: string;
+	public node: Node;
+
+	public constructor(prefix: string, node: Node) {
+		super();
+		this.prefix = prefix;
+		this.node = node;
+	}
+}
+
 export class BinaryExprNode extends Node {
 	public type: string = "BinaryExpr";
 	public left: Node;

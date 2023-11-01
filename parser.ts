@@ -151,12 +151,12 @@ export class Parser {
 			if (res.error)
 				return res;
 
-			return newNode(
+			return res.success(newNode(
 				new BinaryExprNode(left.node, operator, right.node),
-				left.node.pos, right.node.pos);
+				left.node.pos, right.node.pos));
 		}
 
-		return left;
+		return res.success(left);
 	}
 
 	// --------------------------------------------

@@ -35,6 +35,16 @@ export class NumericLiteralNode extends Node {
 	}
 }
 
+export class IdentifierNode extends Node {
+	public type: string = "Identifier";
+	public value: string;
+
+	public constructor(value: string) {
+		super();
+		this.value = value;
+	}
+}
+
 export class StringLiteralNode extends Node {
 	public type: string = "StringLiteral";
 	public value: string;
@@ -58,6 +68,30 @@ export class LiteralNode extends Node {
 // --------------------------------------------
 // Expressions
 // --------------------------------------------
+export class VarDeclarationNode extends Node {
+	public type: string = "VarDeclaration";
+	public ident: string;
+	public value: Node;
+
+	public constructor(ident: string, value: Node) {
+		super();
+		this.ident = ident;
+		this.value = value;
+	}
+}
+
+export class VarAssignmentNode extends Node {
+	public type: string = "VarAssignment";
+	public ident: string;
+	public value: Node;
+
+	public constructor(ident: string, value: Node) {
+		super();
+		this.ident = ident;
+		this.value = value;
+	}
+}
+
 export class UnaryExprNode extends Node {
 	public type: string = "UnaryExpr";
 	public prefix: string;

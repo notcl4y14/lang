@@ -4,17 +4,14 @@ import {
 	newNode,
 	Node,
 	NumericLiteralNode,
+	IdentifierNode,
 	StringLiteralNode,
 	LiteralNode,
+	VarDeclarationNode,
+	VarAssignmentNode,
 	UnaryExprNode,
 	BinaryExprNode } from "./nodes";
 import { either } from "./utils/general";
-
-// checks for ParseResult error
-// let checkError = function(res: ParseResult) {
-	// if (res.error)
-		// return res;
-// }
 
 export class ParseResult {
 	public error: Error;
@@ -103,6 +100,35 @@ export class Parser {
 	// Expressions
 	// --------------------------------------------
 	public parseExpr() {
+		var res = new ParseResult();
+
+		// VarDeclaration
+		if (this.at().type == TokenType.Keyword && (this.at().value == "var" || this.at().value == "let")) {
+			// keyword
+			var keyword = res.register(this.yum());
+
+			// identifier
+			if (this.at().type != TokenType.Ident)
+				return res.failure(new Error(this.at().pos.left, "Expected Identifier"));
+
+			var ident = res.register(this.yum().value);
+
+			// TODO: support for variables that don't have a specified value yet
+			if (!this.at().match(TokenType.Symbol, "=")) {
+				return res.failure(new Error(this.at().pos.left, "Expected '='"));
+			}
+
+			res.register(this.yum());
+
+			// value
+			var value = res.register(this.parseExpr());
+
+			if (res.error)
+				return res;
+
+			return res.success(newNode(new VarDeclarationNode(ident, value), keyword.pos.left, keyword.pos.right));
+		}
+
 		return this.parseAdditiveExpr();
 	}
 
@@ -191,9 +217,20 @@ export class Parser {
 					token.pos.left, token.pos.right));
 			}
 
+			// VarAssignment
+			if (this.at().match(TokenType.Symbol, "=")) {
+				res.register(this.yum());
+				var value = res.register(this.parseExpr());
+
+				if (res.error)
+					return res;
+
+				return res.success(newNode(new VarAssignmentNode(token.value, value), token.pos.left, token.pos.right));
+			}
+
 			// Identifier
 			return res.success(newNode(
-				new NumericLiteralNode(token.value),
+				new IdentifierNode(token.value),
 				token.pos.left, token.pos.right));
 
 		// ------------------------------------------------------------------------------------------
@@ -223,9 +260,6 @@ export class Parser {
 
 			return res.failure(new Error(this.at().pos.left, "Expected ')'"));
 		}
-
-		// return newNode(new LiteralNode("undefined"), token.pos.left, token.pos.right);
-		// console.log(token);
 
 		// return an error
 		var value = token.value;

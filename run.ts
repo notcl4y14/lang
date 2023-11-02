@@ -1,6 +1,6 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
-import { Interpreter } from "./interpreter";
+import { Interpreter, Environment } from "./interpreter";
 let utils = require("util");
 
 export function run(filename: string, code: string, args: string[]) {
@@ -25,8 +25,9 @@ export function run(filename: string, code: string, args: string[]) {
 	if (showParser)
 		console.log(utils.inspect(ast.node, {showHidden: false, depth: null, colors: true}));
 
+	var env = new Environment();
 	var interpreter = new Interpreter();
-	var result = interpreter.visit(ast.node);
+	var result = interpreter.visit(ast.node, env);
 
 	if (result.error) {
 		console.log(result.error.asString());

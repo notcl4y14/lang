@@ -1,6 +1,6 @@
 {
 	"op": "+-*/%!",
-    "symbols": ".,:;&|",
+    "symbols": ".,:;&|=",
     "paren": "()",
     "brackets": "[]",
     "braces": "{}",

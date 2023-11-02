@@ -3,10 +3,49 @@ import {
 	newNode,
 	Node,
 	NumericLiteralNode,
+	IdentifierNode,
 	StringLiteralNode,
 	LiteralNode,
+	VarDeclarationNode,
+	VarAssignmentNode,
 	UnaryExprNode,
 	BinaryExprNode } from "./nodes";
+
+export class Environment {
+	public variables: any;
+	public parent?: Environment;
+
+	public constructor(parent?: Environment) {
+		this.variables = {};
+		this.parent = parent;
+	}
+
+	public declareVar(name: string, value: any) {
+		if (this.lookupVar(name)) {
+			return;
+		}
+
+		this.variables[name] = value;
+		return this.lookupVar(name);
+	}
+
+	public setVar(name: string, value: any) {
+		if (!this.lookupVar(name)) {
+			return;
+		}
+
+		this.variables[name] = value;
+		return this.lookupVar(name);
+	}
+
+	public lookupVar(name: string) {
+		if (!this.variables[name]) {
+			return;
+		}
+
+		return this.variables[name];
+	}
+}
 
 export class RuntimeResult {
 	public value: any;
@@ -37,22 +76,20 @@ export class RuntimeResult {
 }
 
 export class Interpreter {
-	public visit(node: Node) {
-		/*var funcName = `visit_${node.type}`;
-		var func = this["no_visit"];
-
-		if (eval(`this.${funcName}`)) {
-			func = eval(`this.${funcName}`);
-		}
-
-		return func(node);*/
+	public visit(node: Node, env: Environment) {
 
 		if (node.type == "NumericLiteral") {
 			return this.visit_NumericLiteral(node as NumericLiteralNode);
-		} else if (node.type == "BinaryExpr") {
-			return this.visit_BinaryExpr(node as BinaryExprNode);
+		} else if (node.type == "Identifier") {
+			return this.visit_Identifier(node as IdentifierNode, env);
+		} else if (node.type == "VarDeclaration") {
+			return this.visit_VarDeclaration(node as VarDeclarationNode, env);
+		} else if (node.type == "VarAssignment") {
+			return this.visit_VarAssignment(node as VarAssignmentNode, env);
 		} else if (node.type == "UnaryExpr") {
-			return this.visit_UnaryExpr(node as UnaryExprNode);
+			return this.visit_UnaryExpr(node as UnaryExprNode, env);
+		} else if (node.type == "BinaryExpr") {
+			return this.visit_BinaryExpr(node as BinaryExprNode, env);
 		}
 
 		return this.no_visit(node);
@@ -60,16 +97,46 @@ export class Interpreter {
 
 	public no_visit(node: Node) {
 		return new RuntimeResult().failure(
-			new Error(node.pos, `This AST node has not been setup for interpretation yet: ${node.type}`));
+			new Error(node.pos.left, `This AST node has not been setup for interpretation yet: ${node.type}`));
 	}
 
 	public visit_NumericLiteral(node: NumericLiteralNode) {
 		return new RuntimeResult().success({type: "number", value: node.value});
 	}
 
-	public visit_UnaryExpr(node: UnaryExprNode) {
+	public visit_Identifier(node: IdentifierNode, env: Environment) {
 		var res = new RuntimeResult();
-		var value: any = res.register(this.visit(node.node));
+		var variable: any = this.visit(env.lookupVar(node.value), env);
+
+		if (!variable)
+			return res.success({type: "undefined"});
+
+		return res.success(variable);
+	}
+
+	public visit_VarDeclaration(node: VarDeclarationNode, env: Environment) {
+		var res = new RuntimeResult();
+		var variable: any = this.visit(env.declareVar(node.ident, node.value), env);
+
+		if (!variable)
+			return res.failure(new Error(node.pos.left, `Cannot redeclare variable '${node.ident}'`));
+
+		return res.success(variable);
+	}
+
+	public visit_VarAssignment(node: VarAssignmentNode, env: Environment) {
+		var res = new RuntimeResult();
+		var variable: any = this.visit(env.setVar(node.ident, node.value), env);
+
+		if (!variable)
+			return res.failure(new Error(node.pos.left, `Cannot assign an undeclared variable '${node.ident}'`));
+
+		return res.success(variable);
+	}
+
+	public visit_UnaryExpr(node: UnaryExprNode, env: Environment) {
+		var res = new RuntimeResult();
+		var value: any = res.register(this.visit(node.node, env));
 
 		if (res.error)
 			return res;
@@ -81,13 +148,13 @@ export class Interpreter {
 		return res.success(value);
 	}
 
-	public visit_BinaryExpr(node: BinaryExprNode) {
+	public visit_BinaryExpr(node: BinaryExprNode, env: Environment) {
 		var res = new RuntimeResult();
-		var left: any = res.register(this.visit(node.left));
+		var left: any = res.register(this.visit(node.left, env));
 		if (res.error)
 			return res;
 
-		var right: any = res.register(this.visit(node.right));
+		var right: any = res.register(this.visit(node.right, env));
 		if (res.error)
 			return res;
 

@@ -47,9 +47,6 @@ export class Lexer {
 			// Operator
 			} else if (strings.op.includes(this.at())) {
 				tokens.push( new Token(TokenType.Operator, this.at(), this.pos.clone()) );
-			// UnOp
-			// } else if (strings.unop.includes(this.at())) {
-				// tokens.push( new Token(TokenType.UnOp, this.at(), this.pos.clone()) );
 			// Symbol
 			} else if (strings.symbols.includes(this.at())) {
 				tokens.push( new Token(TokenType.Symbol, this.at(), this.pos.clone()) );

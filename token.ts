@@ -1,8 +1,6 @@
 import { Position } from "./position";
 
 export enum TokenType {
-	// BinOp,
-	// UnOp,
 	Operator,
 	Number,
 	String,
@@ -18,8 +16,6 @@ export enum TokenType {
 }
 
 export var TokenTypeStr: string[] = [
-	// "Binary Operator",
-	// "Unary Operator",
 	"Operator",
 	"Number",
 	"String",

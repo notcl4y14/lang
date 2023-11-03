@@ -43,6 +43,18 @@ export class Lexer {
 			// Multiline comments
 			} else if (this.at(2) == "/*") {
 				tokens.push( this.makeMultilineComment() );
+			// Logical Operator
+			} else if (strings.logical_op.includes(this.at(2))) {
+				tokens.push( new Token(TokenType.LogicalOp, this.at(2), this.pos.clone()) );
+				this.yum();
+				
+			// Comparison Operator
+			} else if (strings.comparison_op[1].includes(this.at(2))) {
+				tokens.push( new Token(TokenType.CompOp, this.at(2), this.pos.clone()) );
+				this.yum();
+
+			} else if (strings.comparison_op[0].includes(this.at())) {
+				tokens.push( new Token(TokenType.CompOp, this.at(), this.pos.clone()) );
 			
 			// Operator
 			} else if (strings.op.includes(this.at())) {

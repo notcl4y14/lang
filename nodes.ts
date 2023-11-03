@@ -104,6 +104,20 @@ export class UnaryExprNode extends Node {
 	}
 }
 
+export class LogicalExprNode extends Node {
+	public type: string = "LogicalExpr";
+	public left: Node;
+	public operator: string;
+	public right: Node;
+
+	public constructor(left: Node, operator: string, right: Node) {
+		super();
+		this.left = left;
+		this.operator = operator;
+		this.right = right;
+	}
+}
+
 export class BinaryExprNode extends Node {
 	public type: string = "BinaryExpr";
 	public left: Node;

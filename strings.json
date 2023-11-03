@@ -7,5 +7,10 @@
 	"digits": "1234567890",
 	"quotes": "\"'`",
 	"ident": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_",
-	"keywords": ["var", "let", "if", "else", "while", "for", "function"]
+	"keywords": ["var", "let", "if", "else", "while", "for", "function"],
+	"logical_op": ["&&", "||"],
+	"comparison_op": [
+		["<", ">"],
+		["<=", ">=", "==", "!="]
+	]
 }

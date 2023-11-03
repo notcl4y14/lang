@@ -2,6 +2,8 @@ import { Position } from "./position";
 
 export enum TokenType {
 	Operator,
+	LogicalOp,
+	CompOp,
 	Number,
 	String,
     Paren,
@@ -17,6 +19,8 @@ export enum TokenType {
 
 export var TokenTypeStr: string[] = [
 	"Operator",
+	"Logical Operator",
+	"Comparison Operator",
 	"Number",
 	"String",
     "Parenthesis",

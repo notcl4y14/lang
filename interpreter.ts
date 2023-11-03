@@ -9,6 +9,7 @@ import {
 	VarDeclarationNode,
 	VarAssignmentNode,
 	UnaryExprNode,
+	LogicalExprNode,
 	BinaryExprNode } from "./nodes";
 
 export class Environment {
@@ -82,17 +83,28 @@ export class Interpreter {
 			return this.visit_NumericLiteral(node as NumericLiteralNode);
 		} else if (node.type == "Identifier") {
 			return this.visit_Identifier(node as IdentifierNode, env);
+		} else if (node.type == "Literal") {
+			return this.visit_Literal(node as LiteralNode, env);
 		} else if (node.type == "VarDeclaration") {
 			return this.visit_VarDeclaration(node as VarDeclarationNode, env);
 		} else if (node.type == "VarAssignment") {
 			return this.visit_VarAssignment(node as VarAssignmentNode, env);
 		} else if (node.type == "UnaryExpr") {
 			return this.visit_UnaryExpr(node as UnaryExprNode, env);
+		} else if (node.type == "LogicalExpr") {
+			return this.visit_LogicalExpr(node as LogicalExprNode, env);
 		} else if (node.type == "BinaryExpr") {
 			return this.visit_BinaryExpr(node as BinaryExprNode, env);
 		}
 
 		return this.no_visit(node);
+	}
+
+	public toBoolean(value: any) {
+		return (
+				!(value.type == "undefined"
+				|| value.type == "null"
+				|| (value.type === "boolean" && value.value == false)));
 	}
 
 	public no_visit(node: Node) {
@@ -112,6 +124,17 @@ export class Interpreter {
 			return res.success({type: "undefined"});
 
 		return res.success(variable);
+	}
+
+	public visit_Literal(node: LiteralNode, env: Environment) {
+		var res = new RuntimeResult();
+
+		if (["true", "false"].includes(node.value)) {
+			var value = node.value == "true" ? true : false;
+			return res.success({type: "boolean", value: value});
+		}
+
+		return res.success({type: node.value});
 	}
 
 	public visit_VarDeclaration(node: VarDeclarationNode, env: Environment) {
@@ -148,6 +171,28 @@ export class Interpreter {
 		return res.success(value);
 	}
 
+	public visit_LogicalExpr(node: LogicalExprNode, env: Environment) {
+		var res = new RuntimeResult();
+		var left: any = res.register(this.visit(node.left, env));
+		if (res.error)
+			return res;
+
+		var right: any = res.register(this.visit(node.right, env));
+		if (res.error)
+			return res;
+
+		var operator = node.operator;
+		var result;
+
+		if (operator == "&&") {
+			result = this.toBoolean(left) && this.toBoolean(right);
+		} else if (operator == "||") {
+			result = this.toBoolean(left) || this.toBoolean(right);
+		}
+
+		return res.success({type: "boolean", value: result});
+	}
+
 	public visit_BinaryExpr(node: BinaryExprNode, env: Environment) {
 		var res = new RuntimeResult();
 		var left: any = res.register(this.visit(node.left, env));
@@ -176,6 +221,34 @@ export class Interpreter {
 		} else if (operator == "%") {
 			result = left.value % right.value;
 		}
+
+		if (["<", ">", "<=", ">="].includes(node.operator)) {
+
+			if (left.type != "number" || right.type != "number") {
+				// var _node = left.type != "number"
+					// ? left
+					// : right;
+
+				return res.failure(new Error(node.pos.left.pos.left, "Cannot compare non-number value"));
+			}
+		}
+
+		if (operator == "<") {
+			result = left.value < right.value;
+		} else if (operator == ">") {
+			result = left.value > right.value;
+		} else if (operator == "<=") {
+			result = left.value <= right.value;
+		} else if (operator == ">=") {
+			result = left.value >= right.value;
+		} else if (operator == "!=") {
+			result = left.value != right.value;
+		} else if (operator == "==") {
+			result = left.value == right.value && left.type == right.type;
+		}
+
+		if (result == true || result == false)
+			return res.success({type: "boolean", value: result});
 
 		return res.success({type: "number", value: result});
 	}

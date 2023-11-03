@@ -10,6 +10,7 @@ import {
 	VarDeclarationNode,
 	VarAssignmentNode,
 	UnaryExprNode,
+	LogicalExprNode,
 	BinaryExprNode } from "./nodes";
 import { either } from "./utils/general";
 
@@ -129,7 +130,53 @@ export class Parser {
 			return res.success(newNode(new VarDeclarationNode(ident, value), keyword.pos.left, keyword.pos.right));
 		}
 
-		return this.parseAdditiveExpr();
+		return this.parseLogicalExpr();
+	}
+
+	// Logical Expression
+	public parseLogicalExpr() {
+		var res = new ParseResult();
+		var left = res.register(this.parseCompExpr());
+
+		if (res.error)
+			return res;
+
+		while (this.notEof() && this.at().type == TokenType.LogicalOp) {
+			var operator = this.yum().value;
+			var right = res.register(this.parseCompExpr());
+
+			if (res.error)
+				return res;
+
+			return res.success(newNode(
+				new LogicalExprNode(left, operator, right),
+				left.pos, right.pos));
+		}
+
+		return res.success(left);
+	}
+
+	// Comparison Expression
+	public parseCompExpr() {
+		var res = new ParseResult();
+		var left = res.register(this.parseAdditiveExpr());
+
+		if (res.error)
+			return res;
+
+		while (this.notEof() && this.at().type == TokenType.CompOp) {
+			var operator = this.yum().value;
+			var right = res.register(this.parseAdditiveExpr());
+
+			if (res.error)
+				return res;
+
+			return res.success(newNode(
+				new BinaryExprNode(left, operator, right),
+				left.pos, right.pos));
+		}
+
+		return res.success(left);
 	}
 
 	// TODO: fix additive and mult expressions being ignored when using them again like 1 + 2 + 3 and 2 * 3 / 4

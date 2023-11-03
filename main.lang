@@ -1,1 +1,3 @@
-undefined && true
+if (true && true) {
+	lol
+} else if (true || true) {}

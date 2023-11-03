@@ -6,6 +6,7 @@ let utils = require("util");
 export function run(filename: string, code: string, args: string[]) {
 	var showLexer = args.includes("--lexer");
 	var showParser = args.includes("--parser");
+	var showInterpreter = args.includes("--interpreter");
 
 	// -------------------------------------------------------------------
 	var lexer = new Lexer(filename, code);
@@ -34,5 +35,6 @@ export function run(filename: string, code: string, args: string[]) {
 		return;
 	}
 
-	console.log(result.value);
+	if (showInterpreter)
+		console.log(result.value);
 }

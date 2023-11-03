@@ -23,6 +23,19 @@ export abstract class Node {
 }
 
 // --------------------------------------------
+// Miscellaneous
+// --------------------------------------------
+export class ProgramNode extends Node {
+	public type: string = "Program";
+	public body: Node[];
+
+	public constructor() {
+		super();
+		this.body = [];
+	}
+}
+
+// --------------------------------------------
 // Literals
 // --------------------------------------------
 export class NumericLiteralNode extends Node {
@@ -66,8 +79,32 @@ export class LiteralNode extends Node {
 }
 
 // --------------------------------------------
-// Expressions
+// Statements
 // --------------------------------------------
+export class IfStatementNode extends Node {
+	public type: string = "IfStatement";
+	public condition: Node;
+	public block: BlockStatementNode;
+	public alternate?: IfStatementNode | BlockStatementNode;
+
+	public constructor(condition: Node, block: BlockStatementNode, alternate?: IfStatementNode | BlockStatementNode) {
+		super();
+		this.condition = condition;
+		this.block = block;
+		this.alternate = alternate;
+	}
+}
+
+export class BlockStatementNode extends Node {
+	public type: string = "BlockStatement";
+	public body: Node[];
+
+	public constructor(body: Node[] = []) {
+		super();
+		this.body = body;
+	}
+}
+
 export class VarDeclarationNode extends Node {
 	public type: string = "VarDeclaration";
 	public ident: string;
@@ -80,6 +117,9 @@ export class VarDeclarationNode extends Node {
 	}
 }
 
+// --------------------------------------------
+// Expressions
+// --------------------------------------------
 export class VarAssignmentNode extends Node {
 	public type: string = "VarAssignment";
 	public ident: string;

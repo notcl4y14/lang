@@ -3,10 +3,13 @@ import { Error } from "./error";
 import {
 	newNode,
 	Node,
+	ProgramNode,
 	NumericLiteralNode,
 	IdentifierNode,
 	StringLiteralNode,
 	LiteralNode,
+	IfStatementNode,
+	BlockStatementNode,
 	VarDeclarationNode,
 	VarAssignmentNode,
 	UnaryExprNode,
@@ -89,47 +92,131 @@ export class Parser {
 	// but i commented this anyways because it somehow
 	// makes my code look cleaner imo
 	public parse() {
-		var res = this.parseExpr();
+		var res = new ParseResult();
+		var program = res.register(new ProgramNode());
 
-		if (!res.error && this.at().type != TokenType.EOF)
-			return res.failure(new Error(res.node.pos, "An error that was called in the parse() function.\nI'm not sure what does it do yet"));
+		while (this.notEof()) {
+			var _res = this.parseStmt();
 
-		return res;
+			// if (!_res.error && this.at().type != TokenType.EOF)
+				// return _res.failure(new Error(_res.node.pos, "An error that was called in the parse() function.\nI'm not sure what does it do yet"));
+			if (_res.error)
+				return _res;
+
+			program.body.push(_res.node);
+		}
+
+		return res.success(program);
+	}
+
+	// --------------------------------------------
+	// Statements
+	// --------------------------------------------
+	public parseStmt() {
+		// VarDeclaration
+		if (this.at().type == TokenType.Keyword && (this.at().value == "var" || this.at().value == "let")) {
+			return this.parseVariableDeclaration();
+		// IfStatement
+		} else if (this.at().match(TokenType.Keyword, "if")) {
+			return this.parseIfStatement();
+		}
+
+		return this.parseExpr();
+	}
+
+	// VarDeclaration
+	public parseVariableDeclaration() {
+		var res = new ParseResult();
+
+		// keyword
+		var keyword = res.register(this.yum());
+
+		// identifier
+		if (this.at().type != TokenType.Ident)
+			return res.failure(new Error(this.at().pos.left, "Expected Identifier"));
+
+		var ident = res.register(this.yum().value);
+
+		// TODO: support for variables that don't have a specified value yet
+		if (!this.at().match(TokenType.Symbol, "=")) {
+			return res.failure(new Error(this.at().pos.left, "Expected '='"));
+		}
+
+		res.register(this.yum());
+
+		// value
+		var value = res.register(this.parseExpr());
+
+		if (res.error)
+			return res;
+
+		return res.success(newNode(new VarDeclarationNode(ident, value), keyword.pos.left, value.pos.right));
+	}
+
+	// IfStatement
+	public parseIfStatement(): any {
+		var res = new ParseResult();
+
+		var	condition,
+			block,
+			alternate;
+
+		// keyword
+		var keyword = res.register(this.yum());
+
+		// condition
+		condition = res.register(this.parseExpr());
+
+		if (res.error)
+			return res;
+
+		// block
+		block = res.register(this.parseBlockStatement());
+
+		if (this.at().match(TokenType.Keyword, "else")) {
+			this.yum();
+
+			if (this.at().match(TokenType.Keyword, "if")) {
+				alternate = res.register(this.parseIfStatement());
+			} else {
+				alternate = res.register(this.parseBlockStatement());
+			}
+		}
+
+		return res.success(newNode(new IfStatementNode(condition, block, alternate), keyword.pos.left, block.pos.right));
+	}
+
+	// BlockStatement
+	public parseBlockStatement() {
+		var res = new ParseResult();
+
+		var body = [];
+
+		// block
+		if (!this.at().match(TokenType.Brace, "{"))
+			return res.failure(new Error(this.at().pos.left, "Expected '{'"));
+
+		var leftBrace = this.yum();
+
+		while (this.notEof() && !this.at().match(TokenType.Brace, "}")) {
+			body.push(res.register(this.parseStmt()));
+
+			if (res.error)
+				return res;
+		}
+
+		if (!this.at().match(TokenType.Brace, "}"))
+			return res.failure(new Error(this.at().pos.left, "Expected '}'"));
+
+		var rightBrace = this.yum();
+
+		return res.success(newNode(new BlockStatementNode(body), leftBrace.pos.left, rightBrace.pos.right));
 	}
 
 	// --------------------------------------------
 	// Expressions
 	// --------------------------------------------
 	public parseExpr() {
-		var res = new ParseResult();
-
-		// VarDeclaration
-		if (this.at().type == TokenType.Keyword && (this.at().value == "var" || this.at().value == "let")) {
-			// keyword
-			var keyword = res.register(this.yum());
-
-			// identifier
-			if (this.at().type != TokenType.Ident)
-				return res.failure(new Error(this.at().pos.left, "Expected Identifier"));
-
-			var ident = res.register(this.yum().value);
-
-			// TODO: support for variables that don't have a specified value yet
-			if (!this.at().match(TokenType.Symbol, "=")) {
-				return res.failure(new Error(this.at().pos.left, "Expected '='"));
-			}
-
-			res.register(this.yum());
-
-			// value
-			var value = res.register(this.parseExpr());
-
-			if (res.error)
-				return res;
-
-			return res.success(newNode(new VarDeclarationNode(ident, value), keyword.pos.left, keyword.pos.right));
-		}
-
 		return this.parseLogicalExpr();
 	}
 

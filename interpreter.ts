@@ -2,10 +2,13 @@ import { Error } from "./error";
 import {
 	newNode,
 	Node,
+	ProgramNode,
 	NumericLiteralNode,
 	IdentifierNode,
 	StringLiteralNode,
 	LiteralNode,
+	IfStatementNode,
+	BlockStatementNode,
 	VarDeclarationNode,
 	VarAssignmentNode,
 	UnaryExprNode,
@@ -77,14 +80,20 @@ export class RuntimeResult {
 }
 
 export class Interpreter {
-	public visit(node: Node, env: Environment) {
+	public visit(node: Node, env: Environment): any {
 
-		if (node.type == "NumericLiteral") {
+		if (node.type == "Program") {
+			return this.visit_Program(node as ProgramNode, env);
+		} else if (node.type == "NumericLiteral") {
 			return this.visit_NumericLiteral(node as NumericLiteralNode);
 		} else if (node.type == "Identifier") {
 			return this.visit_Identifier(node as IdentifierNode, env);
 		} else if (node.type == "Literal") {
 			return this.visit_Literal(node as LiteralNode, env);
+		} else if (node.type == "IfStatement") {
+			return this.visit_IfStatement(node as IfStatementNode, env);
+		} else if (node.type == "BlockStatement") {
+			return this.visit_BlockStatement(node as BlockStatementNode, env);
 		} else if (node.type == "VarDeclaration") {
 			return this.visit_VarDeclaration(node as VarDeclarationNode, env);
 		} else if (node.type == "VarAssignment") {
@@ -112,18 +121,34 @@ export class Interpreter {
 			new Error(node.pos.left, `This AST node has not been setup for interpretation yet: ${node.type}`));
 	}
 
+	public visit_Program(node: ProgramNode, env: Environment) {
+		var res = new RuntimeResult();
+		var value;
+
+		for (var i = 0; i < node.body.length; i += 1) {
+			value = res.register(this.visit(node.body[i], env));
+
+			if (res.error)
+				return res;
+		}
+
+		return res.success(value);
+	}
+
 	public visit_NumericLiteral(node: NumericLiteralNode) {
 		return new RuntimeResult().success({type: "number", value: node.value});
 	}
 
 	public visit_Identifier(node: IdentifierNode, env: Environment) {
 		var res = new RuntimeResult();
-		var variable: any = this.visit(env.lookupVar(node.value), env);
+		var variable = env.lookupVar(node.value);
 
 		if (!variable)
 			return res.success({type: "undefined"});
 
-		return res.success(variable);
+		var resultVar = this.visit(variable, env);
+
+		return res.success(resultVar);
 	}
 
 	public visit_Literal(node: LiteralNode, env: Environment) {
@@ -135,6 +160,44 @@ export class Interpreter {
 		}
 
 		return res.success({type: node.value});
+	}
+
+	public visit_IfStatement(node: IfStatementNode, env: Environment) {
+		var res = new RuntimeResult();
+		var isCondTrue = this.toBoolean(res.register(this.visit(node.condition, env)));
+
+		if (res.error)
+			return res;
+
+		var value;
+
+		if (isCondTrue) {
+			value = res.register(this.visit(node.block, env));
+
+			if (res.error)
+				return res;
+		} else if (node.alternate) {
+			value = res.register(this.visit(node.alternate, env));
+
+			if (res.error)
+				return res;
+		}
+
+		return res.success(value);
+	}
+
+	public visit_BlockStatement(node: BlockStatementNode, env: Environment) {
+		var res = new RuntimeResult();
+		var value;
+
+		for (var i = 0; i < node.body.length; i += 1) {
+			value = res.register(this.visit(node.body[i], env));
+
+			if (res.error)
+				return res;
+		}
+
+		return res.success(value);
 	}
 
 	public visit_VarDeclaration(node: VarDeclarationNode, env: Environment) {

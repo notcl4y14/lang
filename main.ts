@@ -3,7 +3,8 @@ import { run } from "./run";
 
 var validArgs:string[] = [
 	"--lexer",
-	"--parser"
+	"--parser",
+	"--interpreter"
 ];
 
 let main = function():void {

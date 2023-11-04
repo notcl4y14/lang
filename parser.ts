@@ -9,6 +9,8 @@ import {
 	StringLiteralNode,
 	LiteralNode,
 	IfStatementNode,
+	ForStatementNode,
+	WhileStatementNode,
 	BlockStatementNode,
 	VarDeclarationNode,
 	VarAssignmentNode,
@@ -119,6 +121,12 @@ export class Parser {
 		// IfStatement
 		} else if (this.at().match(TokenType.Keyword, "if")) {
 			return this.parseIfStatement();
+		// ForStatement
+		} else if (this.at().match(TokenType.Keyword, "for")) {
+			return this.parseForStatement();
+		// WhileStatement
+		} else if (this.at().match(TokenType.Keyword, "while")) {
+			return this.parseWhileStatement();
 		}
 
 		return this.parseExpr();
@@ -165,7 +173,7 @@ export class Parser {
 		var keyword = res.register(this.yum());
 
 		// condition
-		condition = res.register(this.parseExpr());
+		condition = res.register(this.parseStmt());
 
 		if (res.error)
 			return res;
@@ -184,6 +192,89 @@ export class Parser {
 		}
 
 		return res.success(newNode(new IfStatementNode(condition, block, alternate), keyword.pos.left, block.pos.right));
+	}
+
+	// ForStatement
+	public parseForStatement(): any {
+		var res = new ParseResult();
+
+		var	init,
+			test,
+			update,
+			block;
+
+		// keyword
+		var keyword = res.register(this.yum());
+
+		if (this.at().match(TokenType.Paren, "("))
+			this.yum();
+
+		// init
+		init = res.register(this.parseStmt());
+
+		if (res.error)
+			return res;
+
+		if (!this.at().match(TokenType.Symbol, ";"))
+			return res.failure(new Error(this.at().pos.left, "Expected ';'"));
+
+		this.yum();
+
+		// if (init.type != "VarDeclaration")
+			// return res.failure(new Error(init.pos.left, "Expected variable declaration"));
+
+		// test
+		test = res.register(this.parseStmt());
+
+		if (res.error)
+			return res;
+
+		if (!this.at().match(TokenType.Symbol, ";"))
+			return res.failure(new Error(this.at().pos.left, "Expected ';'"));
+
+		this.yum();
+
+		// update
+		update = res.register(this.parseStmt());
+
+		if (res.error)
+			return res;
+
+		if (this.at().match(TokenType.Paren, ")"))
+			this.yum();
+
+		// block
+		block = res.register(this.parseBlockStatement());
+
+		return res.success(newNode(new ForStatementNode(init, test, update, block), keyword.pos.left, block.pos.right));
+	}
+
+	// WhileStatement
+	public parseWhileStatement(): any {
+		var res = new ParseResult();
+
+		var	test,
+			block;
+
+		// keyword
+		var keyword = res.register(this.yum());
+
+		if (this.at().match(TokenType.Paren, "("))
+			this.yum();
+
+		// test
+		test = res.register(this.parseStmt());
+
+		if (res.error)
+			return res;
+
+		if (this.at().match(TokenType.Paren, ")"))
+			this.yum();
+
+		// block
+		block = res.register(this.parseBlockStatement());
+
+		return res.success(newNode(new WhileStatementNode(test, block), keyword.pos.left, block.pos.right));
 	}
 
 	// BlockStatement

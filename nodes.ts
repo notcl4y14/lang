@@ -95,6 +95,34 @@ export class IfStatementNode extends Node {
 	}
 }
 
+export class ForStatementNode extends Node {
+	public type: string = "ForStatement";
+	public init: Node;
+	public test: Node;
+	public update: Node;
+	public block: BlockStatementNode;
+
+	public constructor(init: Node, test: Node, update: Node, block: BlockStatementNode) {
+		super();
+		this.init = init;
+		this.test = test;
+		this.update = update;
+		this.block = block;
+	}
+}
+
+export class WhileStatementNode extends Node {
+	public type: string = "WhileStatement";
+	public test: Node;
+	public block: BlockStatementNode;
+
+	public constructor(test: Node, block: BlockStatementNode) {
+		super();
+		this.test = test;
+		this.block = block;
+	}
+}
+
 export class BlockStatementNode extends Node {
 	public type: string = "BlockStatement";
 	public body: Node[];

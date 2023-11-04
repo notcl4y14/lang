@@ -8,6 +8,8 @@ import {
 	StringLiteralNode,
 	LiteralNode,
 	IfStatementNode,
+	ForStatementNode,
+	WhileStatementNode,
 	BlockStatementNode,
 	VarDeclarationNode,
 	VarAssignmentNode,
@@ -33,8 +35,12 @@ export class Environment {
 		return this.lookupVar(name);
 	}
 
-	public setVar(name: string, value: any) {
+	public setVar(name: string, value: any): any {
 		if (!this.lookupVar(name)) {
+			if (this.parent) {
+				return this.parent.setVar(name, value);
+			}
+
 			return;
 		}
 
@@ -42,8 +48,12 @@ export class Environment {
 		return this.lookupVar(name);
 	}
 
-	public lookupVar(name: string) {
+	public lookupVar(name: string): any {
 		if (!this.variables[name]) {
+			if (this.parent) {
+				return this.parent.lookupVar(name);
+			}
+
 			return;
 		}
 
@@ -61,11 +71,15 @@ export class RuntimeResult {
 	}
 
 	public register(res: any) {
-		if (res.error) {
-			this.error = res.error;
+		if (res instanceof RuntimeResult) {
+			if (res.error) {
+				this.error = res.error;
+			}
+
+			return res.value;
 		}
 
-		return res.value;
+		return res;
 	}
 
 	public success(value: any) {
@@ -92,6 +106,10 @@ export class Interpreter {
 			return this.visit_Literal(node as LiteralNode, env);
 		} else if (node.type == "IfStatement") {
 			return this.visit_IfStatement(node as IfStatementNode, env);
+		} else if (node.type == "ForStatement") {
+			return this.visit_ForStatement(node as ForStatementNode, env);
+		} else if (node.type == "WhileStatement") {
+			return this.visit_WhileStatement(node as WhileStatementNode, env);
 		} else if (node.type == "BlockStatement") {
 			return this.visit_BlockStatement(node as BlockStatementNode, env);
 		} else if (node.type == "VarDeclaration") {
@@ -110,6 +128,8 @@ export class Interpreter {
 	}
 
 	public toBoolean(value: any) {
+		if (!value) return;
+
 		return (
 				!(value.type == "undefined"
 				|| value.type == "null"
@@ -143,12 +163,15 @@ export class Interpreter {
 		var res = new RuntimeResult();
 		var variable = env.lookupVar(node.value);
 
+		if (node.value == "lol")
+			console.log("lol");
+
 		if (!variable)
 			return res.success({type: "undefined"});
 
-		var resultVar = this.visit(variable, env);
+		// var resultVar = res.register(this.visit(variable, env));
 
-		return res.success(resultVar);
+		return res.success(variable);
 	}
 
 	public visit_Literal(node: LiteralNode, env: Environment) {
@@ -186,8 +209,58 @@ export class Interpreter {
 		return res.success(value);
 	}
 
+	public visit_ForStatement(node: ForStatementNode, env: Environment) {
+		var res = new RuntimeResult();
+		var subEnv = new Environment(env);
+		var initVar = res.register(this.visit(node.init, subEnv));
+		if (res.error) return res;
+
+		var isTestTrue = this.toBoolean(res.register(this.visit(node.test, subEnv)));
+		if (res.error) return res;
+
+		var update = node.update;
+		var value;
+
+		while (isTestTrue) {
+			// console.log("Executing a block...");
+			value = res.register(this.visit(node.block, subEnv));
+			if (res.error) return res;
+
+			// console.log("Updating the value...");
+			res.register(this.visit(update, subEnv));
+			if (res.error) return res;
+
+			// console.log("Updating the test value...");
+			isTestTrue = this.toBoolean(res.register(this.visit(node.test, subEnv)));
+			if (res.error) return res;
+		}
+
+		return res.success(value);
+	}
+
+	public visit_WhileStatement(node: WhileStatementNode, env: Environment) {
+		var res = new RuntimeResult();
+
+		var isTestTrue = this.toBoolean(res.register(this.visit(node.test, env)));
+		if (res.error) return res;
+
+		var value;
+
+		while (isTestTrue) {
+			value = res.register(this.visit(node.block, env));
+			if (res.error) return res;
+
+			isTestTrue = this.toBoolean(res.register(this.visit(node.test, env)));
+			if (res.error) return res;
+		}
+
+		return res.success(value);
+	}
+
+	// TODO: make block statements have a local scope
 	public visit_BlockStatement(node: BlockStatementNode, env: Environment) {
 		var res = new RuntimeResult();
+		// var subEnv = new Environment(env);
 		var value;
 
 		for (var i = 0; i < node.body.length; i += 1) {
@@ -202,7 +275,7 @@ export class Interpreter {
 
 	public visit_VarDeclaration(node: VarDeclarationNode, env: Environment) {
 		var res = new RuntimeResult();
-		var variable: any = this.visit(env.declareVar(node.ident, node.value), env);
+		var variable: any = env.declareVar(node.ident, res.register(this.visit(node.value, env)));
 
 		if (!variable)
 			return res.failure(new Error(node.pos.left, `Cannot redeclare variable '${node.ident}'`));
@@ -212,7 +285,7 @@ export class Interpreter {
 
 	public visit_VarAssignment(node: VarAssignmentNode, env: Environment) {
 		var res = new RuntimeResult();
-		var variable: any = this.visit(env.setVar(node.ident, node.value), env);
+		var variable: any = env.setVar(node.ident, res.register(this.visit(node.value, env)));
 
 		if (!variable)
 			return res.failure(new Error(node.pos.left, `Cannot assign an undeclared variable '${node.ident}'`));
@@ -292,7 +365,8 @@ export class Interpreter {
 					// ? left
 					// : right;
 
-				return res.failure(new Error(node.pos.left.pos.left, "Cannot compare non-number value"));
+				// console.log(left);
+				return res.failure(new Error(node.left.pos.left, "Cannot compare non-number value " + left.type + ", " + right.type));
 			}
 		}
 
@@ -310,7 +384,7 @@ export class Interpreter {
 			result = left.value == right.value && left.type == right.type;
 		}
 
-		if (result == true || result == false)
+		if (result === true || result === false)
 			return res.success({type: "boolean", value: result});
 
 		return res.success({type: "number", value: result});

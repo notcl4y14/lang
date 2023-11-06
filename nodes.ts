@@ -20,6 +20,15 @@ export abstract class Node {
 	// let's just leave this any type alone
 	// and not bring back a lot of errors :D
 	public pos: any;
+
+	public setPos(left: Position, right: Position) {
+		this.pos = {
+			left: left,
+			right: right
+		};
+
+		return this;
+	}
 }
 
 // --------------------------------------------

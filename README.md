@@ -13,7 +13,7 @@ Just a language that's still under development. If you still want to try it out,
 - Make the code cleaner
 - Overcomment interpreter.ts and other uncommented files because Idk why
 - Make functions to create runtime values
-- Make functions for node classes to set position like `new IdentifierNode("lol").setPos(leftPos, rightPos);`
+- ~~Make functions for node classes to set position like `new IdentifierNode("lol").setPos(leftPos, rightPos);`~~
 - Change left and right positions for nodes and errors
-- Change the right position for one-character tokens in the lexer
+- (Unsure if it's done) Change the right position for one-character tokens in the lexer
 - Probably make getting filename not from the position

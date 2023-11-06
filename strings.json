@@ -1,9 +1,9 @@
 {
 	"op": "+-*/%!",
-    "symbols": ".,:;&|=;",
-    "paren": "()",
-    "brackets": "[]",
-    "braces": "{}",
+	"symbols": ".,:;&|=;",
+	"paren": "()",
+	"brackets": "[]",
+	"braces": "{}",
 	"digits": "1234567890",
 	"quotes": "\"'`",
 	"ident": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_",

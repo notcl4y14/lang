@@ -3,7 +3,7 @@ import { Parser } from "./parser";
 import { Interpreter, Environment } from "./interpreter";
 let utils = require("util");
 
-export function run(filename: string, code: string, args: string[]) {
+export function run(filename: string, code: string, args: string[] = [], overrideEnv: Environment = new Environment()) {
 	var showLexer = args.includes("--lexer");
 	var showParser = args.includes("--parser");
 	var showInterpreter = args.includes("--interpreter");
@@ -26,7 +26,7 @@ export function run(filename: string, code: string, args: string[]) {
 	if (showParser)
 		console.log(utils.inspect(ast.node, {showHidden: false, depth: null, colors: true}));
 
-	var env = new Environment();
+	var env = overrideEnv;
 
 	env.declareVar("writeln", {type: "function", value: (args: any[], env: Environment) => {
 		var value = args[0];
@@ -44,4 +44,6 @@ export function run(filename: string, code: string, args: string[]) {
 
 	if (showInterpreter)
 		console.log(result.value);
+
+	return result.value;
 }

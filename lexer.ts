@@ -62,13 +62,13 @@ export class Lexer {
 			// Symbol
 			} else if (strings.symbols.includes(this.at())) {
 				tokens.push( new Token(TokenType.Symbol, this.at(), this.pos.clone()) );
-            // Paren
+			// Paren
 			} else if (strings.paren.includes(this.at())) {
 				tokens.push( new Token(TokenType.Paren, this.at(), this.pos.clone()) );
-            // Brackets
+			// Brackets
 			} else if (strings.brackets.includes(this.at())) {
 				tokens.push( new Token(TokenType.Bracket, this.at(), this.pos.clone()) );
-            // Braces
+			// Braces
 			} else if (strings.braces.includes(this.at())) {
 				tokens.push( new Token(TokenType.Brace, this.at(), this.pos.clone()) );
 			// Number

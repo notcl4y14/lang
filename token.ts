@@ -6,12 +6,12 @@ export enum TokenType {
 	CompOp,
 	Number,
 	String,
-    Paren,
-    Bracket,
-    Brace,
+	Paren,
+	Bracket,
+	Brace,
 	Ident,
 	Keyword,
-    Symbol,
+	Symbol,
 
 	Comment,
 	EOF
@@ -23,12 +23,12 @@ export var TokenTypeStr: string[] = [
 	"Comparison Operator",
 	"Number",
 	"String",
-    "Parenthesis",
-    "Bracket",
-    "Brace",
+	"Parenthesis",
+	"Bracket",
+	"Brace",
 	"Identifier",
 	"Keyword",
-    "Symbol",
+	"Symbol",
 
 	"Comment",
 	"EOF"
@@ -49,6 +49,7 @@ export class Token {
 
 		if (!posRight) {
 			this.pos.right = posLeft;
+			this.pos.right.advance();
 		}
 	}
 

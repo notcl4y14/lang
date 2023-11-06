@@ -190,7 +190,10 @@ export class Parser {
 		if (res.error)
 			return res;
 
-		return res.success(newNode(new VarDeclarationNode(ident, value), keyword.pos.left, value.pos.right));
+		var leftPos = keyword.pos.left;
+		var rightPos = value.pos.right;
+
+		return res.success(new VarDeclarationNode(ident, value).setPos(leftPos, rightPos));
 	}
 
 	// IfStatement
@@ -223,7 +226,10 @@ export class Parser {
 			}
 		}
 
-		return res.success(newNode(new IfStatementNode(condition, block, alternate), keyword.pos.left, block.pos.right));
+		var leftPos = keyword.pos.left;
+		var rightPos = block.pos.right;
+
+		return res.success(new IfStatementNode(condition, block, alternate).setPos(leftPos, rightPos));
 	}
 
 	// ForStatement
@@ -278,7 +284,10 @@ export class Parser {
 		// block
 		block = res.register(this.parseBlockStatement());
 
-		return res.success(newNode(new ForStatementNode(init, test, update, block), keyword.pos.left, block.pos.right));
+		var leftPos = keyword.pos.left;
+		var rightPos = block.pos.right;
+
+		return res.success(new ForStatementNode(init, test, update, block).setPos(leftPos, rightPos));
 	}
 
 	// WhileStatement
@@ -306,7 +315,10 @@ export class Parser {
 		// block
 		block = res.register(this.parseBlockStatement());
 
-		return res.success(newNode(new WhileStatementNode(test, block), keyword.pos.left, block.pos.right));
+		var leftPos = keyword.pos.left;
+		var rightPos = block.pos.right;
+
+		return res.success((new WhileStatementNode(test, block).setPos(leftPos, rightPos)));
 	}
 
 	// BlockStatement
@@ -333,7 +345,10 @@ export class Parser {
 
 		var rightBrace = this.yum();
 
-		return res.success(newNode(new BlockStatementNode(body), leftBrace.pos.left, rightBrace.pos.right));
+		var leftPos = leftBrace.pos.left;
+		var rightPos = rightBrace.pos.right;
+
+		return res.success(new BlockStatementNode(body).setPos(leftPos, rightPos));
 	}
 
 	// --------------------------------------------
@@ -358,9 +373,12 @@ export class Parser {
 			if (res.error)
 				return res;
 
-			return res.success(newNode(
-				new LogicalExprNode(left, operator, right),
-				left.pos, right.pos));
+			var leftPos = left.pos;
+			var rightPos = right.pos;
+
+			return res.success(
+				new LogicalExprNode(left, operator, right)
+					.setPos(leftPos, rightPos));
 		}
 
 		return res.success(left);
@@ -381,9 +399,12 @@ export class Parser {
 			if (res.error)
 				return res;
 
-			return res.success(newNode(
-				new BinaryExprNode(left, operator, right),
-				left.pos, right.pos));
+			var leftPos = left.pos;
+			var rightPos = right.pos;
+
+			return res.success(
+				new BinaryExprNode(left, operator, right)
+					.setPos(leftPos, rightPos));
 		}
 
 		return res.success(left);
@@ -410,9 +431,12 @@ export class Parser {
 			if (res.error)
 				return res;
 
-			return res.success(newNode(
-				new BinaryExprNode(left, operator, right),
-				left.pos, right.pos));
+			var leftPos = left.pos;
+			var rightPos = right.pos;
+
+			return res.success(
+				new BinaryExprNode(left, operator, right)
+					.setPos(leftPos, rightPos));
 		}
 
 		return res.success(left);
@@ -438,9 +462,12 @@ export class Parser {
 			if (res.error)
 				return res;
 
-			return res.success(newNode(
-				new BinaryExprNode(left, operator, right),
-				left.pos, right.pos));
+			var leftPos = left.pos;
+			var rightPos = right.pos;
+
+			return res.success(
+				new BinaryExprNode(left, operator, right)
+					.setPos(leftPos, rightPos));
 		}
 
 		return res.success(left);
@@ -462,7 +489,12 @@ export class Parser {
 			if (res.error)
 				return res;
 
-			return res.success(newNode(new CallExprNode(ident, args), ident.pos.left, this.at().pos.left));
+			var leftPos = ident.pos.left;
+			var rightPos = this.at().pos.left;
+
+			return res.success(
+				new CallExprNode(ident, args)
+					.setPos(leftPos, rightPos));
 		}
 
 		return res.success(ident);
@@ -475,25 +507,28 @@ export class Parser {
 		var res = new ParseResult();
 		var token = res.register(this.yum());
 
+		var leftPos = token.pos.left;
+		var rightPos = token.pos.right;
+
 		// NumericLiteral
 		if (token.type == TokenType.Number) {
-			return res.success(newNode(
-				new NumericLiteralNode(token.value),
-				token.pos.left, token.pos.right));
+			return res.success(
+				new NumericLiteralNode(token.value)
+					.setPos(leftPos, rightPos));
 
 		// StringLiteral
 		} else if (token.type == TokenType.String) {
-			return res.success(newNode(
-				new StringLiteralNode(token.value),
-				token.pos.left, token.pos.right));
+			return res.success(
+				new StringLiteralNode(token.value)
+					.setPos(leftPos, rightPos));
 
 		// Identifier | Literals
 		} else if (token.type == TokenType.Ident) {
 			// Literal
 			if (either(token.value, "undefined", "null", "true", "false")) {
-				return res.success(newNode(
-					new LiteralNode(token.value),
-					token.pos.left, token.pos.right));
+				return res.success(
+					new LiteralNode(token.value)
+						.setPos(leftPos, rightPos));
 			}
 
 			// VarAssignment
@@ -504,13 +539,17 @@ export class Parser {
 				if (res.error)
 					return res;
 
-				return res.success(newNode(new VarAssignmentNode(token.value, value), token.pos.left, token.pos.right));
+				rightPos = value.pos.right;
+
+				return res.success(
+					new VarAssignmentNode(token.value, value)
+						.setPos(leftPos, rightPos));
 			}
 
 			// Identifier
-			return res.success(newNode(
-				new IdentifierNode(token.value),
-				token.pos.left, token.pos.right));
+			return res.success(
+				new IdentifierNode(token.value)
+					.setPos(leftPos, rightPos));
 
 		// ------------------------------------------------------------------------------------------
 
@@ -521,9 +560,9 @@ export class Parser {
 			if (res.error)
 				return res;
 
-			return res.success(newNode(
-				new UnaryExprNode(token.value, node),
-				token.pos.left, token.pos.right));
+			return res.success(
+				new UnaryExprNode(token.value, node)
+					.setPos(leftPos, rightPos));
 
 		// Parenthesised expression
 		} else if (token.match(TokenType.Paren, "(")) {
@@ -547,6 +586,6 @@ export class Parser {
 		if (!value)
 			value = TokenTypeStr[token.type];
 
-		return res.failure(new Error(token.pos.left, `Unexpected token '${value}'`));
+		return res.failure(new Error(leftPos, `Unexpected token '${value}'`));
 	}
 }

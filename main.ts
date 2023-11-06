@@ -1,5 +1,6 @@
 let fs = require("fs");
 import { run } from "./run";
+import { shell_run } from "./shell";
 
 var validArgs:string[] = [
 	"--lexer",
@@ -44,7 +45,10 @@ let main = function():void {
 
 	// check if filename isn't specified
 	if (!filename) {
-		console.log("Please specify a filename!");
+		// console.log("Please specify a filename!");
+
+		// Start shell
+		shell_run();
 		return;
 	}
 

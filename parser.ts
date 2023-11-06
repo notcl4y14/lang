@@ -1,28 +1,12 @@
 import { Token, TokenType, TokenTypeStr } from "./token";
+import { Position } from "./position";
 import { Error } from "./error";
-import {
-	newNode,
-	Node,
-	ProgramNode,
-	NumericLiteralNode,
-	IdentifierNode,
-	StringLiteralNode,
-	LiteralNode,
-	IfStatementNode,
-	ForStatementNode,
-	WhileStatementNode,
-	BlockStatementNode,
-	VarDeclarationNode,
-	CallExprNode,
-	VarAssignmentNode,
-	UnaryExprNode,
-	LogicalExprNode,
-	BinaryExprNode } from "./nodes";
+import * as nodes from "./nodes";
 import { either } from "./utils/general";
 
 export class ParseResult {
 	public error: Error;
-	public node: Node;
+	public node: nodes.Node;
 
 	public constructor() {
 		this.error = null;
@@ -40,13 +24,13 @@ export class ParseResult {
 		return res;
 	}
 
-	public success(node: Node) {
+	public success(node: nodes.Node) {
 		this.node = node;
 		return this;
 	}
 
-	public failure(error: Error) {
-		this.error = error;
+	public failure(pos: Position, details: string) {
+		this.error = new Error(pos, details);
 		return this;
 	}
 }
@@ -96,13 +80,11 @@ export class Parser {
 	// makes my code look cleaner imo
 	public parse() {
 		var res = new ParseResult();
-		var program = res.register(new ProgramNode());
+		var program = res.register(new nodes.ProgramNode());
 
 		while (this.notEof()) {
 			var _res = this.parseStmt();
 
-			// if (!_res.error && this.at().type != TokenType.EOF)
-				// return _res.failure(new Error(_res.node.pos, "An error that was called in the parse() function.\nI'm not sure what does it do yet"));
 			if (_res.error)
 				return _res;
 
@@ -131,7 +113,7 @@ export class Parser {
 			args.push(value);
 
 			if (!this.at().match(separator.type, separator.value) && !this.at().match(closingToken.type, closingToken.value))
-				return res.failure(new Error(this.at().pos.left, `Expected '${separator.value}' or '${closingToken.value}'`));
+				return res.failure(this.at().pos.left, `Expected '${separator.value}' or '${closingToken.value}'`);
 
 			if (this.at().match(closingToken.type, closingToken.value))
 				this.yum();
@@ -173,13 +155,13 @@ export class Parser {
 
 		// identifier
 		if (this.at().type != TokenType.Ident)
-			return res.failure(new Error(this.at().pos.left, "Expected Identifier"));
+			return res.failure(this.at().pos.left, "Expected Identifier");
 
 		var ident = res.register(this.yum().value);
 
 		// TODO: support for variables that don't have a specified value yet
 		if (!this.at().match(TokenType.Symbol, "=")) {
-			return res.failure(new Error(this.at().pos.left, "Expected '='"));
+			return res.failure(this.at().pos.left, "Expected '='");
 		}
 
 		res.register(this.yum());
@@ -193,7 +175,7 @@ export class Parser {
 		var leftPos = keyword.pos.left;
 		var rightPos = value.pos.right;
 
-		return res.success(new VarDeclarationNode(ident, value).setPos(leftPos, rightPos));
+		return res.success(new nodes.VarDeclarationNode(ident, value).setPos(leftPos, rightPos));
 	}
 
 	// IfStatement
@@ -229,7 +211,7 @@ export class Parser {
 		var leftPos = keyword.pos.left;
 		var rightPos = block.pos.right;
 
-		return res.success(new IfStatementNode(condition, block, alternate).setPos(leftPos, rightPos));
+		return res.success(new nodes.IfStatementNode(condition, block, alternate).setPos(leftPos, rightPos));
 	}
 
 	// ForStatement
@@ -254,12 +236,12 @@ export class Parser {
 			return res;
 
 		if (!this.at().match(TokenType.Symbol, ";"))
-			return res.failure(new Error(this.at().pos.left, "Expected ';'"));
+			return res.failure(this.at().pos.left, "Expected ';'");
 
 		this.yum();
 
 		// if (init.type != "VarDeclaration")
-			// return res.failure(new Error(init.pos.left, "Expected variable declaration"));
+			// return res.failure(init.pos.left, "Expected variable declaration"));
 
 		// test
 		test = res.register(this.parseStmt());
@@ -268,7 +250,7 @@ export class Parser {
 			return res;
 
 		if (!this.at().match(TokenType.Symbol, ";"))
-			return res.failure(new Error(this.at().pos.left, "Expected ';'"));
+			return res.failure(this.at().pos.left, "Expected ';'");
 
 		this.yum();
 
@@ -287,7 +269,7 @@ export class Parser {
 		var leftPos = keyword.pos.left;
 		var rightPos = block.pos.right;
 
-		return res.success(new ForStatementNode(init, test, update, block).setPos(leftPos, rightPos));
+		return res.success(new nodes.ForStatementNode(init, test, update, block).setPos(leftPos, rightPos));
 	}
 
 	// WhileStatement
@@ -318,7 +300,7 @@ export class Parser {
 		var leftPos = keyword.pos.left;
 		var rightPos = block.pos.right;
 
-		return res.success((new WhileStatementNode(test, block).setPos(leftPos, rightPos)));
+		return res.success((new nodes.WhileStatementNode(test, block).setPos(leftPos, rightPos)));
 	}
 
 	// BlockStatement
@@ -329,7 +311,7 @@ export class Parser {
 
 		// block
 		if (!this.at().match(TokenType.Brace, "{"))
-			return res.failure(new Error(this.at().pos.left, "Expected '{'"));
+			return res.failure(this.at().pos.left, "Expected '{'");
 
 		var leftBrace = this.yum();
 
@@ -341,14 +323,14 @@ export class Parser {
 		}
 
 		if (!this.at().match(TokenType.Brace, "}"))
-			return res.failure(new Error(this.at().pos.left, "Expected '}'"));
+			return res.failure(this.at().pos.left, "Expected '}'");
 
 		var rightBrace = this.yum();
 
 		var leftPos = leftBrace.pos.left;
 		var rightPos = rightBrace.pos.right;
 
-		return res.success(new BlockStatementNode(body).setPos(leftPos, rightPos));
+		return res.success(new nodes.BlockStatementNode(body).setPos(leftPos, rightPos));
 	}
 
 	// --------------------------------------------
@@ -377,7 +359,7 @@ export class Parser {
 			var rightPos = right.pos;
 
 			return res.success(
-				new LogicalExprNode(left, operator, right)
+				new nodes.LogicalExprNode(left, operator, right)
 					.setPos(leftPos, rightPos));
 		}
 
@@ -403,7 +385,7 @@ export class Parser {
 			var rightPos = right.pos;
 
 			return res.success(
-				new BinaryExprNode(left, operator, right)
+				new nodes.BinaryExprNode(left, operator, right)
 					.setPos(leftPos, rightPos));
 		}
 
@@ -435,7 +417,7 @@ export class Parser {
 			var rightPos = right.pos;
 
 			return res.success(
-				new BinaryExprNode(left, operator, right)
+				new nodes.BinaryExprNode(left, operator, right)
 					.setPos(leftPos, rightPos));
 		}
 
@@ -466,7 +448,7 @@ export class Parser {
 			var rightPos = right.pos;
 
 			return res.success(
-				new BinaryExprNode(left, operator, right)
+				new nodes.BinaryExprNode(left, operator, right)
 					.setPos(leftPos, rightPos));
 		}
 
@@ -493,7 +475,7 @@ export class Parser {
 			var rightPos = this.at().pos.left;
 
 			return res.success(
-				new CallExprNode(ident, args)
+				new nodes.CallExprNode(ident, args)
 					.setPos(leftPos, rightPos));
 		}
 
@@ -513,13 +495,13 @@ export class Parser {
 		// NumericLiteral
 		if (token.type == TokenType.Number) {
 			return res.success(
-				new NumericLiteralNode(token.value)
+				new nodes.NumericLiteralNode(token.value)
 					.setPos(leftPos, rightPos));
 
 		// StringLiteral
 		} else if (token.type == TokenType.String) {
 			return res.success(
-				new StringLiteralNode(token.value)
+				new nodes.StringLiteralNode(token.value)
 					.setPos(leftPos, rightPos));
 
 		// Identifier | Literals
@@ -527,7 +509,7 @@ export class Parser {
 			// Literal
 			if (either(token.value, "undefined", "null", "true", "false")) {
 				return res.success(
-					new LiteralNode(token.value)
+					new nodes.LiteralNode(token.value)
 						.setPos(leftPos, rightPos));
 			}
 
@@ -542,13 +524,13 @@ export class Parser {
 				rightPos = value.pos.right;
 
 				return res.success(
-					new VarAssignmentNode(token.value, value)
+					new nodes.VarAssignmentNode(token.value, value)
 						.setPos(leftPos, rightPos));
 			}
 
 			// Identifier
 			return res.success(
-				new IdentifierNode(token.value)
+				new nodes.IdentifierNode(token.value)
 					.setPos(leftPos, rightPos));
 
 		// ------------------------------------------------------------------------------------------
@@ -561,7 +543,7 @@ export class Parser {
 				return res;
 
 			return res.success(
-				new UnaryExprNode(token.value, node)
+				new nodes.UnaryExprNode(token.value, node)
 					.setPos(leftPos, rightPos));
 
 		// Parenthesised expression
@@ -576,7 +558,7 @@ export class Parser {
 				return res.success(node);
 			}
 
-			return res.failure(new Error(this.at().pos.left, "Expected ')'"));
+			return res.failure(this.at().pos.left, "Expected ')'");
 		}
 
 		// return an error
@@ -586,6 +568,6 @@ export class Parser {
 		if (!value)
 			value = TokenTypeStr[token.type];
 
-		return res.failure(new Error(leftPos, `Unexpected token '${value}'`));
+		return res.failure(leftPos, `Unexpected token '${value}'`);
 	}
 }

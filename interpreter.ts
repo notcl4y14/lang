@@ -1,22 +1,6 @@
+import { Position } from "./position";
 import { Error } from "./error";
-import {
-	newNode,
-	Node,
-	ProgramNode,
-	NumericLiteralNode,
-	IdentifierNode,
-	StringLiteralNode,
-	LiteralNode,
-	IfStatementNode,
-	ForStatementNode,
-	WhileStatementNode,
-	BlockStatementNode,
-	VarDeclarationNode,
-	CallExprNode,
-	VarAssignmentNode,
-	UnaryExprNode,
-	LogicalExprNode,
-	BinaryExprNode } from "./nodes";
+import * as nodes from "./nodes";
 
 export class Environment {
 	public variables: any;
@@ -88,49 +72,56 @@ export class RuntimeResult {
 		return this;
 	}
 
-	public failure(error: Error) {
-		this.error = error;
+	// public failure(error: Error) {
+		// this.error = error;
+		// return this;
+	// }
+
+	public failure(pos: Position, details: string) {
+		this.error = new Error(pos, details);
 		return this;
 	}
 }
 
 export class Interpreter {
-	public visit(node: Node, env: Environment): any {
+	public visit(node: nodes.Node, env: Environment): any {
 
 		if (node.type == "Program") {
-			return this.visit_Program(node as ProgramNode, env);
+			return this.visit_Program(node as nodes.ProgramNode, env);
 		} else if (node.type == "NumericLiteral") {
-			return this.visit_NumericLiteral(node as NumericLiteralNode);
+			return this.visit_NumericLiteral(node as nodes.NumericLiteralNode);
 		} else if (node.type == "StringLiteral") {
-			return this.visit_StringLiteral(node as StringLiteralNode);
+			return this.visit_StringLiteral(node as nodes.StringLiteralNode);
 		} else if (node.type == "Identifier") {
-			return this.visit_Identifier(node as IdentifierNode, env);
+			return this.visit_Identifier(node as nodes.IdentifierNode, env);
 		} else if (node.type == "Literal") {
-			return this.visit_Literal(node as LiteralNode, env);
+			return this.visit_Literal(node as nodes.LiteralNode, env);
 		} else if (node.type == "IfStatement") {
-			return this.visit_IfStatement(node as IfStatementNode, env);
+			return this.visit_IfStatement(node as nodes.IfStatementNode, env);
 		} else if (node.type == "ForStatement") {
-			return this.visit_ForStatement(node as ForStatementNode, env);
+			return this.visit_ForStatement(node as nodes.ForStatementNode, env);
 		} else if (node.type == "WhileStatement") {
-			return this.visit_WhileStatement(node as WhileStatementNode, env);
+			return this.visit_WhileStatement(node as nodes.WhileStatementNode, env);
 		} else if (node.type == "BlockStatement") {
-			return this.visit_BlockStatement(node as BlockStatementNode, env);
+			return this.visit_BlockStatement(node as nodes.BlockStatementNode, env);
 		} else if (node.type == "VarDeclaration") {
-			return this.visit_VarDeclaration(node as VarDeclarationNode, env);
+			return this.visit_VarDeclaration(node as nodes.VarDeclarationNode, env);
 		} else if (node.type == "CallExpr") {
-			return this.visit_CallExpr(node as CallExprNode, env);
+			return this.visit_CallExpr(node as nodes.CallExprNode, env);
 		} else if (node.type == "VarAssignment") {
-			return this.visit_VarAssignment(node as VarAssignmentNode, env);
+			return this.visit_VarAssignment(node as nodes.VarAssignmentNode, env);
 		} else if (node.type == "UnaryExpr") {
-			return this.visit_UnaryExpr(node as UnaryExprNode, env);
+			return this.visit_UnaryExpr(node as nodes.UnaryExprNode, env);
 		} else if (node.type == "LogicalExpr") {
-			return this.visit_LogicalExpr(node as LogicalExprNode, env);
+			return this.visit_LogicalExpr(node as nodes.LogicalExprNode, env);
 		} else if (node.type == "BinaryExpr") {
-			return this.visit_BinaryExpr(node as BinaryExprNode, env);
+			return this.visit_BinaryExpr(node as nodes.BinaryExprNode, env);
 		}
 
 		return this.no_visit(node);
 	}
+
+	// ------------------------------------------------------------------------------------------
 
 	public toBoolean(value: any) {
 		if (!value) return;
@@ -141,12 +132,45 @@ export class Interpreter {
 				|| (value.type === "boolean" && value.value == false)));
 	}
 
-	public no_visit(node: Node) {
-		return new RuntimeResult().failure(
-			new Error(node.pos.left, `This AST node has not been setup for interpretation yet: ${node.type}`));
+	// ------------------------------------------------------------------------------------------
+
+	public value(type: string, value: any = undefined) {
+		var rtValue = {type, value};
+
+		// if (value)
+			// rtValue.value = value;
+
+		return rtValue;
 	}
 
-	public visit_Program(node: ProgramNode, env: Environment) {
+	public value_undefined() {
+		return this.value("undefined");
+	}
+
+	public value_null() {
+		return this.value("null");
+	}
+
+	public value_number(value: number) {
+		return this.value("number", value);
+	}
+
+	public value_string(value: string) {
+		return this.value("string", value);
+	}
+
+	public value_boolean(value: boolean) {
+		return this.value("boolean", value);
+	}
+
+	// ------------------------------------------------------------------------------------------
+
+	public no_visit(node: nodes.Node) {
+		return new RuntimeResult().failure(
+			node.pos.left, `This AST node has not been setup for interpretation yet: ${node.type}`);
+	}
+
+	public visit_Program(node: nodes.ProgramNode, env: Environment) {
 		var res = new RuntimeResult();
 		var value;
 
@@ -160,15 +184,17 @@ export class Interpreter {
 		return res.success(value);
 	}
 
-	public visit_NumericLiteral(node: NumericLiteralNode) {
-		return new RuntimeResult().success({type: "number", value: node.value});
+	public visit_NumericLiteral(node: nodes.NumericLiteralNode) {
+		var res = new RuntimeResult();
+		return res.success(this.value_number(node.value));
 	}
 
-	public visit_StringLiteral(node: StringLiteralNode) {
-		return new RuntimeResult().success({type: "string", value: node.value});
+	public visit_StringLiteral(node: nodes.StringLiteralNode) {
+		var res = new RuntimeResult();
+		return res.success(this.value_string(node.value));
 	}
 
-	public visit_Identifier(node: IdentifierNode, env: Environment) {
+	public visit_Identifier(node: nodes.IdentifierNode, env: Environment) {
 		var res = new RuntimeResult();
 		var variable = env.lookupVar(node.value);
 
@@ -176,49 +202,44 @@ export class Interpreter {
 			console.log("lol");
 
 		if (!variable)
-			return res.success({type: "undefined"});
+			return res.success(this.value_undefined());
 
 		// var resultVar = res.register(this.visit(variable, env));
 
 		return res.success(variable);
 	}
 
-	public visit_Literal(node: LiteralNode, env: Environment) {
+	public visit_Literal(node: nodes.LiteralNode, env: Environment) {
 		var res = new RuntimeResult();
 
 		if (["true", "false"].includes(node.value)) {
 			var value = node.value == "true" ? true : false;
-			return res.success({type: "boolean", value: value});
+			return res.success(this.value_boolean(value));
 		}
 
-		return res.success({type: node.value});
+		return res.success(this.value(String(value)));
 	}
 
-	public visit_IfStatement(node: IfStatementNode, env: Environment) {
+	public visit_IfStatement(node: nodes.IfStatementNode, env: Environment) {
 		var res = new RuntimeResult();
 		var isCondTrue = this.toBoolean(res.register(this.visit(node.condition, env)));
-
-		if (res.error)
-			return res;
+		if (res.error) return res;
 
 		var value;
 
 		if (isCondTrue) {
 			value = res.register(this.visit(node.block, env));
+			if (res.error) return res;
 
-			if (res.error)
-				return res;
 		} else if (node.alternate) {
 			value = res.register(this.visit(node.alternate, env));
-
-			if (res.error)
-				return res;
+			if (res.error) return res;
 		}
 
 		return res.success(value);
 	}
 
-	public visit_ForStatement(node: ForStatementNode, env: Environment) {
+	public visit_ForStatement(node: nodes.ForStatementNode, env: Environment) {
 		var res = new RuntimeResult();
 		var subEnv = new Environment(env);
 		var initVar = res.register(this.visit(node.init, subEnv));
@@ -247,7 +268,7 @@ export class Interpreter {
 		return res.success(value);
 	}
 
-	public visit_WhileStatement(node: WhileStatementNode, env: Environment) {
+	public visit_WhileStatement(node: nodes.WhileStatementNode, env: Environment) {
 		var res = new RuntimeResult();
 
 		var isTestTrue = this.toBoolean(res.register(this.visit(node.test, env)));
@@ -267,7 +288,7 @@ export class Interpreter {
 	}
 
 	// TODO: make block statements have a local scope
-	public visit_BlockStatement(node: BlockStatementNode, env: Environment) {
+	public visit_BlockStatement(node: nodes.BlockStatementNode, env: Environment) {
 		var res = new RuntimeResult();
 		// var subEnv = new Environment(env);
 		var value;
@@ -282,23 +303,23 @@ export class Interpreter {
 		return res.success(value);
 	}
 
-	public visit_VarDeclaration(node: VarDeclarationNode, env: Environment) {
+	public visit_VarDeclaration(node: nodes.VarDeclarationNode, env: Environment) {
 		var res = new RuntimeResult();
 		var variable: any = env.declareVar(node.ident, res.register(this.visit(node.value, env)));
 
 		if (!variable)
-			return res.failure(new Error(node.pos.left, `Cannot redeclare variable '${node.ident}'`));
+			return res.failure(node.pos.left, `Cannot redeclare variable '${node.ident}'`);
 
 		return res.success(variable);
 	}
 
-	public visit_CallExpr(node: CallExprNode, env: Environment) {
+	public visit_CallExpr(node: nodes.CallExprNode, env: Environment) {
 		var res = new RuntimeResult();
 		var func = res.register(this.visit(node.ident, env));
 		if (res.error) return res;
 
 		if (func.type != "function")
-			return res.failure(new Error(node.pos.left, "Cannot call non-function value"));
+			return res.failure(node.pos.left, "Cannot call non-function value");
 
 		var args = [];
 
@@ -312,17 +333,21 @@ export class Interpreter {
 		return res.success(func.value(args, env));
 	}
 
-	public visit_VarAssignment(node: VarAssignmentNode, env: Environment) {
+	public visit_VarAssignment(node: nodes.VarAssignmentNode, env: Environment) {
 		var res = new RuntimeResult();
-		var variable: any = env.setVar(node.ident, res.register(this.visit(node.value, env)));
+		var variable: any = env.setVar(
+			node.ident,
+			res.register(
+				this.visit(node.value, env)
+			));
 
 		if (!variable)
-			return res.failure(new Error(node.pos.left, `Cannot assign an undeclared variable '${node.ident}'`));
+			return res.failure(node.pos.left, `Cannot assign an undeclared variable '${node.ident}'`);
 
 		return res.success(variable);
 	}
 
-	public visit_UnaryExpr(node: UnaryExprNode, env: Environment) {
+	public visit_UnaryExpr(node: nodes.UnaryExprNode, env: Environment) {
 		var res = new RuntimeResult();
 		var value: any = res.register(this.visit(node.node, env));
 
@@ -336,7 +361,7 @@ export class Interpreter {
 		return res.success(value);
 	}
 
-	public visit_LogicalExpr(node: LogicalExprNode, env: Environment) {
+	public visit_LogicalExpr(node: nodes.LogicalExprNode, env: Environment) {
 		var res = new RuntimeResult();
 		var left: any = res.register(this.visit(node.left, env));
 		if (res.error)
@@ -355,10 +380,10 @@ export class Interpreter {
 			result = this.toBoolean(left) || this.toBoolean(right);
 		}
 
-		return res.success({type: "boolean", value: result});
+		return res.success(this.value_boolean(result));
 	}
 
-	public visit_BinaryExpr(node: BinaryExprNode, env: Environment) {
+	public visit_BinaryExpr(node: nodes.BinaryExprNode, env: Environment) {
 		var res = new RuntimeResult();
 		var left: any = res.register(this.visit(node.left, env));
 		if (res.error)
@@ -380,7 +405,7 @@ export class Interpreter {
 			result = left.value * right.value;
 		} else if (operator == "/") {
 			if (right.value == 0)
-				return res.failure(new Error(node.right.pos.left, "Cannot divide by 0"));
+				return res.failure(node.right.pos.left, "Cannot divide by 0");
 
 			result = left.value / right.value;
 		} else if (operator == "%") {
@@ -395,7 +420,7 @@ export class Interpreter {
 					// : right;
 
 				// console.log(left);
-				return res.failure(new Error(node.left.pos.left, "Cannot compare non-number value " + left.type + ", " + right.type));
+				return res.failure(node.left.pos.left, "Cannot compare non-number value " + left.type + ", " + right.type);
 			}
 		}
 
@@ -414,8 +439,8 @@ export class Interpreter {
 		}
 
 		if (result === true || result === false)
-			return res.success({type: "boolean", value: result});
+			return res.success(this.value_boolean(result));
 
-		return res.success({type: "number", value: result});
+		return res.success(this.value_number(result));
 	}
 }

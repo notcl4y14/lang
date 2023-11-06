@@ -148,6 +148,18 @@ export class VarDeclarationNode extends Node {
 // --------------------------------------------
 // Expressions
 // --------------------------------------------
+export class CallExprNode extends Node {
+	public type: string = "CallExpr";
+	public ident: IdentifierNode;
+	public args: Node[];
+
+	public constructor(ident: IdentifierNode, args: Node[]) {
+		super();
+		this.ident = ident;
+		this.args = args;
+	}
+}
+
 export class VarAssignmentNode extends Node {
 	public type: string = "VarAssignment";
 	public ident: string;

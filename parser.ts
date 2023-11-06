@@ -13,6 +13,7 @@ import {
 	WhileStatementNode,
 	BlockStatementNode,
 	VarDeclarationNode,
+	CallExprNode,
 	VarAssignmentNode,
 	UnaryExprNode,
 	LogicalExprNode,
@@ -109,6 +110,37 @@ export class Parser {
 		}
 
 		return res.success(program);
+	}
+
+	// --------------------------------------------
+	// Miscellaneous
+	// --------------------------------------------
+	public parseArguments(
+		separator: {type: TokenType, value: any} = {type: TokenType.Symbol, value: ","},
+		closingToken: {type: TokenType, value: any} = {type: TokenType.Paren, value: ")"})
+	{
+		var res = new ParseResult();
+		var args = [];
+
+		while (this.notEof() && !this.at().match(closingToken.type, closingToken.value)) {
+			var value = res.register(this.parseExpr());
+
+			if (res.error)
+				return res;
+
+			args.push(value);
+
+			if (!this.at().match(separator.type, separator.value) && !this.at().match(closingToken.type, closingToken.value))
+				return res.failure(new Error(this.at().pos.left, `Expected '${separator.value}' or '${closingToken.value}'`));
+
+			if (this.at().match(closingToken.type, closingToken.value))
+				this.yum();
+		}
+
+		if (this.at().match(closingToken.type, closingToken.value))
+			this.yum();
+
+		return res.register(args);
 	}
 
 	// --------------------------------------------
@@ -390,7 +422,7 @@ export class Parser {
 	public parseMultiplicativeExpr() {
 		var res = new ParseResult();
 		var operators = ["*", "/", "%"];
-		var left = res.register(this.parseLiteral());
+		var left = res.register(this.parseCallExpr());
 
 		if (res.error)
 			return res;
@@ -401,7 +433,7 @@ export class Parser {
 			&& operators.includes(this.at().value)
 		) {
 			var operator = this.yum().value;
-			var right = res.register(this.parseLiteral());
+			var right = res.register(this.parseCallExpr());
 
 			if (res.error)
 				return res;
@@ -412,6 +444,28 @@ export class Parser {
 		}
 
 		return res.success(left);
+	}
+
+	// TODO: Make support for member expressions
+	// Call Expression
+	public parseCallExpr() {
+		var res = new ParseResult();
+		var ident = res.register(this.parseLiteral());
+
+		if (res.error)
+			return res;
+
+		if (this.at().match(TokenType.Paren, "(")) {
+			this.yum();
+			var args = res.register(this.parseArguments());
+
+			if (res.error)
+				return res;
+
+			return res.success(newNode(new CallExprNode(ident, args), ident.pos.left, this.at().pos.left));
+		}
+
+		return res.success(ident);
 	}
 
 	// --------------------------------------------

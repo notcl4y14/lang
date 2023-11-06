@@ -27,6 +27,13 @@ export function run(filename: string, code: string, args: string[]) {
 		console.log(utils.inspect(ast.node, {showHidden: false, depth: null, colors: true}));
 
 	var env = new Environment();
+
+	env.declareVar("writeln", {type: "function", value: (args: any[], env: Environment) => {
+		var value = args[0];
+		console.log(value.value);
+		return {type: "undefined"};
+	}});
+	
 	var interpreter = new Interpreter();
 	var result = interpreter.visit(ast.node, env);
 

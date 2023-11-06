@@ -12,6 +12,7 @@ import {
 	WhileStatementNode,
 	BlockStatementNode,
 	VarDeclarationNode,
+	CallExprNode,
 	VarAssignmentNode,
 	UnaryExprNode,
 	LogicalExprNode,
@@ -100,6 +101,8 @@ export class Interpreter {
 			return this.visit_Program(node as ProgramNode, env);
 		} else if (node.type == "NumericLiteral") {
 			return this.visit_NumericLiteral(node as NumericLiteralNode);
+		} else if (node.type == "StringLiteral") {
+			return this.visit_StringLiteral(node as StringLiteralNode);
 		} else if (node.type == "Identifier") {
 			return this.visit_Identifier(node as IdentifierNode, env);
 		} else if (node.type == "Literal") {
@@ -114,6 +117,8 @@ export class Interpreter {
 			return this.visit_BlockStatement(node as BlockStatementNode, env);
 		} else if (node.type == "VarDeclaration") {
 			return this.visit_VarDeclaration(node as VarDeclarationNode, env);
+		} else if (node.type == "CallExpr") {
+			return this.visit_CallExpr(node as CallExprNode, env);
 		} else if (node.type == "VarAssignment") {
 			return this.visit_VarAssignment(node as VarAssignmentNode, env);
 		} else if (node.type == "UnaryExpr") {
@@ -157,6 +162,10 @@ export class Interpreter {
 
 	public visit_NumericLiteral(node: NumericLiteralNode) {
 		return new RuntimeResult().success({type: "number", value: node.value});
+	}
+
+	public visit_StringLiteral(node: StringLiteralNode) {
+		return new RuntimeResult().success({type: "string", value: node.value});
 	}
 
 	public visit_Identifier(node: IdentifierNode, env: Environment) {
@@ -281,6 +290,26 @@ export class Interpreter {
 			return res.failure(new Error(node.pos.left, `Cannot redeclare variable '${node.ident}'`));
 
 		return res.success(variable);
+	}
+
+	public visit_CallExpr(node: CallExprNode, env: Environment) {
+		var res = new RuntimeResult();
+		var func = res.register(this.visit(node.ident, env));
+		if (res.error) return res;
+
+		if (func.type != "function")
+			return res.failure(new Error(node.pos.left, "Cannot call non-function value"));
+
+		var args = [];
+
+		for (var _node of node.args) {
+			var value = res.register(this.visit(_node, env));
+			if (res.error) return res;
+
+			args.push(value);
+		}
+
+		return res.success(func.value(args, env));
 	}
 
 	public visit_VarAssignment(node: VarAssignmentNode, env: Environment) {

@@ -16,3 +16,4 @@ Just a language that's still under development. If you still want to try it out,
 - Make functions for node classes to set position like `new IdentifierNode("lol").setPos(leftPos, rightPos);`
 - Change left and right positions for nodes and errors
 - Change the right position for one-character tokens in the lexer
+- Probably make getting filename not from the position

@@ -8,3 +8,11 @@ Just a language that's still under development. If you still want to try it out,
    - Since I forgot to put `ts-node` in `package.json`, type also `npm install --save-dev ts-node`
 3. Now to run it, type `lang %*`, %* replace with arguments
    - If you don't have Windows, then type `ts-node --project ./tsconfig.json . %*`, %* replace with arguments
+
+# TODO
+- Make the code cleaner
+- Overcomment interpreter.ts and other uncommented files because Idk
+- Make functions to create runtime values
+- Make functions for node classes to set position like `new IdentifierNode("lol").setPos(leftPos, rightPos);`
+- Change left and right positions for nodes and errors
+- Change the right position for one-character tokens in the lexer

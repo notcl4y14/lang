@@ -47,8 +47,9 @@ export class Token {
 			right: posRight
 		}
 
+		// TODO: make posRight copy posLeft's values and advance
 		if (!posRight) {
-			this.pos.right = posLeft;
+			this.pos.right = posLeft.clone();
 			this.pos.right.advance();
 		}
 	}

@@ -154,6 +154,28 @@ export class VarDeclarationNode extends Node {
 	}
 }
 
+export class FunctionDeclarationNode extends Node {
+	public type: string = "FunctionDeclaration";
+	public name?: string;
+	public params: IdentifierNode[];
+	public block: BlockStatementNode;
+	public anonymous: boolean = false;
+
+	public constructor(ident: string = null, params: IdentifierNode[], block: BlockStatementNode) {
+		super();
+
+		// if (!ident)
+			// this.anonymous = true;
+		this.anonymous = !(ident);
+
+		if (!this.anonymous)
+			this.name = ident;
+
+		this.params = params;
+		this.block = block;
+	}
+}
+
 // --------------------------------------------
 // Expressions
 // --------------------------------------------

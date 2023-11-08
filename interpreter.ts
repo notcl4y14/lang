@@ -83,6 +83,19 @@ export class RuntimeResult {
 	}
 }
 
+export interface RuntimeValue {
+	type: string;
+	value: any;
+}
+
+export interface FunctionRuntimeValue {
+	type: string;
+	params: any[],
+	body: nodes.Node[];
+	call: Function;
+	env: Environment;
+}
+
 export class Interpreter {
 	public visit(node: nodes.Node, env: Environment): any {
 
@@ -106,6 +119,8 @@ export class Interpreter {
 			return this.visit_BlockStatement(node as nodes.BlockStatementNode, env);
 		} else if (node.type == "VarDeclaration") {
 			return this.visit_VarDeclaration(node as nodes.VarDeclarationNode, env);
+		} else if (node.type == "FunctionDeclaration") {
+			return this.visit_FunctionDeclaration(node as nodes.FunctionDeclarationNode, env);
 		} else if (node.type == "CallExpr") {
 			return this.visit_CallExpr(node as nodes.CallExprNode, env);
 		} else if (node.type == "VarAssignment") {
@@ -135,7 +150,7 @@ export class Interpreter {
 	// ------------------------------------------------------------------------------------------
 
 	public value(type: string, value: any = undefined) {
-		var rtValue = {type, value};
+		var rtValue = {type, value} as RuntimeValue;
 
 		// if (value)
 			// rtValue.value = value;
@@ -162,6 +177,10 @@ export class Interpreter {
 	public value_boolean(value: boolean) {
 		return this.value("boolean", value);
 	}
+
+	// public value_function(block: nodes.BlockStatementNode, call: Function) {
+		// return {type: "function", block, call} as FunctionRuntimeValue;
+	// }
 
 	// ------------------------------------------------------------------------------------------
 
@@ -305,7 +324,7 @@ export class Interpreter {
 
 	public visit_VarDeclaration(node: nodes.VarDeclarationNode, env: Environment) {
 		var res = new RuntimeResult();
-		var variable: any = env.declareVar(node.ident, res.register(this.visit(node.value, env)));
+		var variable = env.declareVar(node.ident, res.register(this.visit(node.value, env)));
 
 		if (!variable)
 			return res.failure(node.pos.left, `Cannot redeclare variable '${node.ident}'`);
@@ -313,6 +332,42 @@ export class Interpreter {
 		return res.success(variable);
 	}
 
+	public visit_FunctionDeclaration(node: nodes.FunctionDeclarationNode, env: Environment) {
+		var res = new RuntimeResult();
+
+		var name = node.name;
+		var params = node.params.map((node) => node.value);
+		var body = node.block.body;
+		var anonymous = node.anonymous;
+
+		var interpreter = this;
+
+		var functionVal = {
+			type: "function",
+			params,
+			body,
+			env: null,
+			call: function(args: any[], env: Environment) {
+				var value;
+
+				for (var i = 0; i < body.length; i += 1) {
+					value = res.register(interpreter.visit(body[i], env));
+					if (res.error) return res;
+				}
+
+				this.env = env;
+
+				return res.success(value);
+			}
+		} as FunctionRuntimeValue;
+
+		if (anonymous)
+			return functionVal;
+
+		return env.declareVar(name, functionVal);
+	}
+
+	// TODO: optimize this
 	public visit_CallExpr(node: nodes.CallExprNode, env: Environment) {
 		var res = new RuntimeResult();
 		var func = res.register(this.visit(node.ident, env));
@@ -330,7 +385,16 @@ export class Interpreter {
 			args.push(value);
 		}
 
-		return res.success(func.value(args, env));
+		var _env = new Environment(env);
+
+		for (var i = 0; i < func.params.length; i += 1) {
+			_env.declareVar(func.params[i].value, args[i]);
+		}
+
+		var value = res.register(func.call(args, _env));
+		if (res.error) return res;
+
+		return res.success(value);
 	}
 
 	public visit_VarAssignment(node: nodes.VarAssignmentNode, env: Environment) {

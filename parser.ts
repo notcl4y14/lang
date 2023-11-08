@@ -38,34 +38,25 @@ export class ParseResult {
 export class Parser {
 	public filename : string;
 	public tokens : Token[];
+	public pos: number;
 
 	public constructor(filename: string, tokens: Token[]) {
 		this.filename = filename;
 		this.tokens = tokens;
+		this.pos = -1;
+
+		this.yum();
 	}
 
 	// returns the token the parser is at
-	public at() {
-		// TODO: remove this because it wouldn't be able to get the last yum()-ed token
-		// return EOF if the token is undefined
-		if (this.tokens[0] == undefined) {
-			return this.tokens[this.tokens.length];
-		}
-
-		return this.tokens[0];
+	public at(range: number = 0) {
+		return this.tokens[this.pos + range];
 	}
 
-	// yums the first token, moving to the next one :P
-	public yum() {
-		var token = this.tokens.shift();
-
-		// TODO: the same TODO as the previous one
-		// return EOF if the token is undefined
-		if (!token) {
-			return this.tokens[this.tokens.length];
-		}
-
-		return token;
+	// moves to the next token :P
+	public yum(delta: number = 1) {
+		this.pos += delta;
+		return this.at(-1);
 	}
 
 	// checks if the parser has not reached the end of file
@@ -106,21 +97,21 @@ export class Parser {
 
 		while (this.notEof() && !this.at().match(closingToken.type, closingToken.value)) {
 			var value = res.register(this.parseExpr());
-
-			if (res.error)
-				return res;
+			if (res.error) return res;
 
 			args.push(value);
 
 			if (!this.at().match(separator.type, separator.value) && !this.at().match(closingToken.type, closingToken.value))
 				return res.failure(this.at().pos.left, `Expected '${separator.value}' or '${closingToken.value}'`);
 
-			if (this.at().match(closingToken.type, closingToken.value))
+			if (this.at().match(closingToken.type, closingToken.value)) {
 				this.yum();
+				break;
+			}
 		}
 
-		if (this.at().match(closingToken.type, closingToken.value))
-			this.yum();
+		// if (this.at().match(closingToken.type, closingToken.value))
+			// this.yum();
 
 		return res.register(args);
 	}
@@ -337,7 +328,67 @@ export class Parser {
 	// Expressions
 	// --------------------------------------------
 	public parseExpr() {
+		// FunctionDeclaration
+		if (this.at().match(TokenType.Keyword, "function")) {
+			return this.parseFunctionDeclaration();
+		}
+
 		return this.parseLogicalExpr();
+	}
+
+	/**
+	 * Why is function declaration node
+	 * parsed as an expression?
+	 * Well, I though of how could you
+	 * declare an anonymous function
+	 * in the variable declaration statement
+	 * like "let x = function() {}"
+	 * when it searches for expressions?
+	**/
+
+	// FunctionDeclaration
+	public parseFunctionDeclaration() {
+		var res = new ParseResult();
+
+		var name: string;
+		var params: nodes.IdentifierNode[] = [];
+		var block: nodes.BlockStatementNode;
+
+		// keyword
+		var keyword = this.yum();
+
+		// Anonymous function : function() {}
+		if (this.at().match(TokenType.Paren, "(")) {
+			this.yum();
+			
+			params = res.register(this.parseArguments());
+			if (res.error) return res;
+
+		// Non-anonymous function : function x() {}
+		} else {
+			// name = res.register(this.parseExpr());
+			// if (res.error) return res;
+			name = this.yum().value;
+
+			if (!this.at().match(TokenType.Paren, "("))
+				return res.failure(this.at().pos.right, "Expected '('");
+
+			this.yum();
+
+			params = res.register(this.parseArguments());
+			if (res.error) return res;
+		}
+
+		// block
+		block = res.register(this.parseBlockStatement());
+		if (res.error) return res;
+
+		var leftPos = keyword.pos.left;
+		var rightPos = block.pos.right;
+
+		return res.success(
+			new nodes.FunctionDeclarationNode(name, params, block)
+				.setPos(leftPos, rightPos))
 	}
 
 	// Logical Expression
@@ -487,7 +538,7 @@ export class Parser {
 	// --------------------------------------------
 	public parseLiteral() {
 		var res = new ParseResult();
-		var token = res.register(this.yum());
+		var token = this.yum();
 
 		var leftPos = token.pos.left;
 		var rightPos = token.pos.right;

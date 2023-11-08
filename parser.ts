@@ -102,7 +102,7 @@ export class Parser {
 			args.push(value);
 
 			if (!this.at().match(separator.type, separator.value) && !this.at().match(closingToken.type, closingToken.value))
-				return res.failure(this.at().pos.left, `Expected '${separator.value}' or '${closingToken.value}'`);
+				return res.failure(this.at().pos.right, `Expected '${separator.value}' or '${closingToken.value}'`);
 
 			if (this.at().match(closingToken.type, closingToken.value)) {
 				this.yum();
@@ -146,13 +146,13 @@ export class Parser {
 
 		// identifier
 		if (this.at().type != TokenType.Ident)
-			return res.failure(this.at().pos.left, "Expected Identifier");
+			return res.failure(this.at().pos.right, "Expected Identifier");
 
-		var ident = res.register(this.yum().value);
+		var ident = res.register(this.yum());
 
 		// TODO: support for variables that don't have a specified value yet
 		if (!this.at().match(TokenType.Symbol, "=")) {
-			return res.failure(this.at().pos.left, "Expected '='");
+			return res.failure(this.at().pos.right, "Expected '='");
 		}
 
 		res.register(this.yum());
@@ -227,12 +227,9 @@ export class Parser {
 			return res;
 
 		if (!this.at().match(TokenType.Symbol, ";"))
-			return res.failure(this.at().pos.left, "Expected ';'");
+			return res.failure(this.at().pos.right, "Expected ';'");
 
 		this.yum();
-
-		// if (init.type != "VarDeclaration")
-			// return res.failure(init.pos.left, "Expected variable declaration"));
 
 		// test
 		test = res.register(this.parseStmt());
@@ -241,7 +238,7 @@ export class Parser {
 			return res;
 
 		if (!this.at().match(TokenType.Symbol, ";"))
-			return res.failure(this.at().pos.left, "Expected ';'");
+			return res.failure(this.at().pos.right, "Expected ';'");
 
 		this.yum();
 
@@ -302,7 +299,7 @@ export class Parser {
 
 		// block
 		if (!this.at().match(TokenType.Brace, "{"))
-			return res.failure(this.at().pos.left, "Expected '{'");
+			return res.failure(this.at().pos.right, "Expected '{'");
 
 		var leftBrace = this.yum();
 
@@ -314,7 +311,7 @@ export class Parser {
 		}
 
 		if (!this.at().match(TokenType.Brace, "}"))
-			return res.failure(this.at().pos.left, "Expected '}'");
+			return res.failure(this.at().pos.right, "Expected '}'");
 
 		var rightBrace = this.yum();
 
@@ -568,14 +565,12 @@ export class Parser {
 			if (this.at().match(TokenType.Symbol, "=")) {
 				res.register(this.yum());
 				var value = res.register(this.parseExpr());
-
-				if (res.error)
-					return res;
+				if (res.error) return res;
 
 				rightPos = value.pos.right;
 
 				return res.success(
-					new nodes.VarAssignmentNode(token.value, value)
+					new nodes.VarAssignmentNode(token, value)
 						.setPos(leftPos, rightPos));
 			}
 
@@ -609,7 +604,7 @@ export class Parser {
 				return res.success(node);
 			}
 
-			return res.failure(this.at().pos.left, "Expected ')'");
+			return res.failure(this.at().pos.right, "Expected ')'");
 		}
 
 		// return an error
@@ -619,6 +614,6 @@ export class Parser {
 		if (!value)
 			value = TokenTypeStr[token.type];
 
-		return res.failure(leftPos, `Unexpected token '${value}'`);
+		return res.failure(rightPos, `Unexpected token '${value}'`);
 	}
 }

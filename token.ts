@@ -51,6 +51,8 @@ export class Token {
 		if (!posRight) {
 			this.pos.right = posLeft.clone();
 			this.pos.right.advance();
+			// console.log(this.pos.left);
+			// console.log(this.pos.right);
 		}
 	}
 

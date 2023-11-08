@@ -145,15 +145,26 @@ export class Lexer {
 			this.yum();
 		}
 
+		/**
+		 * I have no absolute idea why does it skip the
+		 * character after lexerizing number or ident.
+		 * But also just have THE SAME POSITION AS THE
+		 * LEFT ONE UNLESS IT'S COPIED BEFORE MOVING
+		 * BACK TO THE PREVIOUS CHARACTER.
+		 * This is very confusing or it's just me.
+		**/
+
+		var posRight = this.pos.clone();
+
 		// move back to the previous character
 		this.yum(-1);
 
 		// parse a number via parseFloat() if the number is float
 		if (float)
-			return new Token(TokenType.Number, parseFloat(numStr), posLeft, this.pos.clone());
+			return new Token(TokenType.Number, parseFloat(numStr), posLeft, posRight);
 
 		// otherwise parseInt() :P
-		return new Token(TokenType.Number, parseInt(numStr), posLeft, this.pos.clone());
+		return new Token(TokenType.Number, parseInt(numStr), posLeft, posRight);
 	}
 
 	// makes the string token
@@ -186,14 +197,16 @@ export class Lexer {
 			this.yum();
 		}
 
+		var posRight = this.pos.clone();
+
 		// move back to the previous character
 		this.yum(-1);
 
 		// return a keyword token if the identifier is a keyword
 		if (strings.keywords.includes(ident))
-			return new Token(TokenType.Keyword, ident, posLeft, this.pos.clone());
+			return new Token(TokenType.Keyword, ident, posLeft, posRight);
 
 		// otherwise return an identifier token :P
-		return new Token(TokenType.Ident, ident, posLeft, this.pos.clone());
+		return new Token(TokenType.Ident, ident, posLeft, posRight);
 	}
 }

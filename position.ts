@@ -28,6 +28,6 @@ export class Position {
 
 	// clones Position with the same properties
 	public clone() {
-		return new Position(this.filename, this.index, this.line, this.column);
+		return Object.assign(new Position(this.filename, this.index, this.line, this.column), this);
 	}
 }

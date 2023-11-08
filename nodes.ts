@@ -1,4 +1,5 @@
 import { Position } from "./position";
+import { Token } from "./token";
 
 // returns a node class with initialized pos
 export function newNode(nodeClass: Node, leftPos: Position, rightPos?: Position) {
@@ -144,10 +145,10 @@ export class BlockStatementNode extends Node {
 
 export class VarDeclarationNode extends Node {
 	public type: string = "VarDeclaration";
-	public ident: string;
+	public ident: Token;
 	public value: Node;
 
-	public constructor(ident: string, value: Node) {
+	public constructor(ident: Token, value: Node) {
 		super();
 		this.ident = ident;
 		this.value = value;
@@ -193,11 +194,12 @@ export class CallExprNode extends Node {
 
 export class VarAssignmentNode extends Node {
 	public type: string = "VarAssignment";
-	public ident: string;
+	public ident: Token;
 	public value: Node;
 
-	public constructor(ident: string, value: Node) {
+	public constructor(ident: Token, value: Node) {
 		super();
+		// console.log(ident);
 		this.ident = ident;
 		this.value = value;
 	}

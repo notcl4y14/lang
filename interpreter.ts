@@ -324,10 +324,13 @@ export class Interpreter {
 
 	public visit_VarDeclaration(node: nodes.VarDeclarationNode, env: Environment) {
 		var res = new RuntimeResult();
-		var variable = env.declareVar(node.ident, res.register(this.visit(node.value, env)));
+		var variable = env.declareVar(
+			node.ident.value,
+			res.register(
+				this.visit(node.value, env)));
 
 		if (!variable)
-			return res.failure(node.pos.left, `Cannot redeclare variable '${node.ident}'`);
+			return res.failure(node.ident.pos.right, `Cannot redeclare variable '${node.ident.value}'`);
 
 		return res.success(variable);
 	}
@@ -374,7 +377,7 @@ export class Interpreter {
 		if (res.error) return res;
 
 		if (func.type != "function")
-			return res.failure(node.pos.left, "Cannot call non-function value");
+			return res.failure(node.pos.right, "Cannot call non-function value");
 
 		var args = [];
 
@@ -400,13 +403,13 @@ export class Interpreter {
 	public visit_VarAssignment(node: nodes.VarAssignmentNode, env: Environment) {
 		var res = new RuntimeResult();
 		var variable: any = env.setVar(
-			node.ident,
+			node.ident.value,
 			res.register(
 				this.visit(node.value, env)
 			));
 
 		if (!variable)
-			return res.failure(node.pos.left, `Cannot assign an undeclared variable '${node.ident}'`);
+			return res.failure(node.ident.pos.right, `Cannot assign an undeclared variable '${node.ident.value}'`);
 
 		return res.success(variable);
 	}
@@ -469,7 +472,7 @@ export class Interpreter {
 			result = left.value * right.value;
 		} else if (operator == "/") {
 			if (right.value == 0)
-				return res.failure(node.right.pos.left, "Cannot divide by 0");
+				return res.failure(node.right.pos.right, "Cannot divide by 0");
 
 			result = left.value / right.value;
 		} else if (operator == "%") {
@@ -484,7 +487,7 @@ export class Interpreter {
 					// : right;
 
 				// console.log(left);
-				return res.failure(node.left.pos.left, "Cannot compare non-number value " + left.type + ", " + right.type);
+				return res.failure(node.left.pos.right, "Cannot compare non-number value " + left.type + ", " + right.type);
 			}
 		}
 

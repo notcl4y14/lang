@@ -78,6 +78,16 @@ export class StringLiteralNode extends Node {
 	}
 }
 
+export class ArrayLiteralNode extends Node {
+	public type: string = "ArrayLiteral";
+	public values: Node[];
+
+	public constructor(values: Node[]) {
+		super();
+		this.values = values;
+	}
+}
+
 export class LiteralNode extends Node {
 	public type: string = "Literal";
 	public value: string;

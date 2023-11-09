@@ -53,6 +53,30 @@ export class Parser {
 		return this.tokens[this.pos + range];
 	}
 
+	// ------------------------------------------------------------------------------------------
+
+	// this.at().match
+	public atMatches(type: TokenType, value: any, at: Token = this.at()) {
+		return at.match(type, value);
+	}
+
+	// this.at().pos
+	public atPos(at: Token = this.at()) {
+		return at.pos;
+	}
+
+	// this.at().type
+	public atType(at: Token = this.at()) {
+		return at.type;
+	}
+
+	// this.at().value
+	public atValue(at: Token = this.at()) {
+		return at.value;
+	}
+
+	// ------------------------------------------------------------------------------------------
+
 	// moves to the next token :P
 	public yum(delta: number = 1) {
 		this.pos += delta;
@@ -61,7 +85,7 @@ export class Parser {
 
 	// checks if the parser has not reached the end of file
 	public notEof() {
-		return this.at().type != TokenType.EOF;
+		return this.atType() != TokenType.EOF;
 	}
 
 	// ------------------------------------------------------------------------------------------
@@ -74,12 +98,10 @@ export class Parser {
 		var program = res.register(new nodes.ProgramNode());
 
 		while (this.notEof()) {
-			var _res = this.parseStmt();
+			var result = this.parseStmt();
+			if (result.error) return result;
 
-			if (_res.error)
-				return _res;
-
-			program.body.push(_res.node);
+			program.body.push(result.node);
 		}
 
 		return res.success(program);
@@ -95,22 +117,22 @@ export class Parser {
 		var res = new ParseResult();
 		var args = [];
 
-		while (this.notEof() && !this.at().match(closingToken.type, closingToken.value)) {
+		while (this.notEof() && !this.atMatches(closingToken.type, closingToken.value)) {
 			var value = res.register(this.parseExpr());
 			if (res.error) return res;
 
 			args.push(value);
 
-			if (!this.at().match(separator.type, separator.value) && !this.at().match(closingToken.type, closingToken.value))
-				return res.failure(this.at().pos.right, `Expected '${separator.value}' or '${closingToken.value}'`);
+			if (!this.atMatches(separator.type, separator.value) && !this.atMatches(closingToken.type, closingToken.value))
+				return res.failure(this.atPos().right, `Expected '${separator.value}' or '${closingToken.value}'`);
 
-			if (this.at().match(closingToken.type, closingToken.value)) {
+			if (this.atMatches(closingToken.type, closingToken.value)) {
 				this.yum();
 				break;
 			}
 		}
 
-		// if (this.at().match(closingToken.type, closingToken.value))
+		// if (this.atMatches(closingToken.type, closingToken.value))
 			// this.yum();
 
 		return res.register(args);
@@ -121,16 +143,16 @@ export class Parser {
 	// --------------------------------------------
 	public parseStmt() {
 		// VarDeclaration
-		if (this.at().type == TokenType.Keyword && (this.at().value == "var" || this.at().value == "let")) {
+		if (this.atType() == TokenType.Keyword && (this.atValue() == "var" || this.atValue() == "let")) {
 			return this.parseVariableDeclaration();
 		// IfStatement
-		} else if (this.at().match(TokenType.Keyword, "if")) {
+		} else if (this.atMatches(TokenType.Keyword, "if")) {
 			return this.parseIfStatement();
 		// ForStatement
-		} else if (this.at().match(TokenType.Keyword, "for")) {
+		} else if (this.atMatches(TokenType.Keyword, "for")) {
 			return this.parseForStatement();
 		// WhileStatement
-		} else if (this.at().match(TokenType.Keyword, "while")) {
+		} else if (this.atMatches(TokenType.Keyword, "while")) {
 			return this.parseWhileStatement();
 		}
 
@@ -145,14 +167,14 @@ export class Parser {
 		var keyword = res.register(this.yum());
 
 		// identifier
-		if (this.at().type != TokenType.Ident)
-			return res.failure(this.at().pos.right, "Expected Identifier");
+		if (this.atType() != TokenType.Ident)
+			return res.failure(this.atPos().right, "Expected Identifier");
 
 		var ident = res.register(this.yum());
 
 		// TODO: support for variables that don't have a specified value yet
-		if (!this.at().match(TokenType.Symbol, "=")) {
-			return res.failure(this.at().pos.right, "Expected '='");
+		if (!this.atMatches(TokenType.Symbol, "=")) {
+			return res.failure(this.atPos().right, "Expected '='");
 		}
 
 		res.register(this.yum());
@@ -189,10 +211,10 @@ export class Parser {
 		// block
 		block = res.register(this.parseBlockStatement());
 
-		if (this.at().match(TokenType.Keyword, "else")) {
+		if (this.atMatches(TokenType.Keyword, "else")) {
 			this.yum();
 
-			if (this.at().match(TokenType.Keyword, "if")) {
+			if (this.atMatches(TokenType.Keyword, "if")) {
 				alternate = res.register(this.parseIfStatement());
 			} else {
 				alternate = res.register(this.parseBlockStatement());
@@ -217,7 +239,7 @@ export class Parser {
 		// keyword
 		var keyword = res.register(this.yum());
 
-		if (this.at().match(TokenType.Paren, "("))
+		if (this.atMatches(TokenType.Paren, "("))
 			this.yum();
 
 		// init
@@ -226,8 +248,8 @@ export class Parser {
 		if (res.error)
 			return res;
 
-		if (!this.at().match(TokenType.Symbol, ";"))
-			return res.failure(this.at().pos.right, "Expected ';'");
+		if (!this.atMatches(TokenType.Symbol, ";"))
+			return res.failure(this.atPos().right, "Expected ';'");
 
 		this.yum();
 
@@ -237,8 +259,8 @@ export class Parser {
 		if (res.error)
 			return res;
 
-		if (!this.at().match(TokenType.Symbol, ";"))
-			return res.failure(this.at().pos.right, "Expected ';'");
+		if (!this.atMatches(TokenType.Symbol, ";"))
+			return res.failure(this.atPos().right, "Expected ';'");
 
 		this.yum();
 
@@ -248,7 +270,7 @@ export class Parser {
 		if (res.error)
 			return res;
 
-		if (this.at().match(TokenType.Paren, ")"))
+		if (this.atMatches(TokenType.Paren, ")"))
 			this.yum();
 
 		// block
@@ -270,7 +292,7 @@ export class Parser {
 		// keyword
 		var keyword = res.register(this.yum());
 
-		if (this.at().match(TokenType.Paren, "("))
+		if (this.atMatches(TokenType.Paren, "("))
 			this.yum();
 
 		// test
@@ -279,7 +301,7 @@ export class Parser {
 		if (res.error)
 			return res;
 
-		if (this.at().match(TokenType.Paren, ")"))
+		if (this.atMatches(TokenType.Paren, ")"))
 			this.yum();
 
 		// block
@@ -298,20 +320,20 @@ export class Parser {
 		var body = [];
 
 		// block
-		if (!this.at().match(TokenType.Brace, "{"))
-			return res.failure(this.at().pos.right, "Expected '{'");
+		if (!this.atMatches(TokenType.Brace, "{"))
+			return res.failure(this.atPos().right, "Expected '{'");
 
 		var leftBrace = this.yum();
 
-		while (this.notEof() && !this.at().match(TokenType.Brace, "}")) {
+		while (this.notEof() && !this.atMatches(TokenType.Brace, "}")) {
 			body.push(res.register(this.parseStmt()));
 
 			if (res.error)
 				return res;
 		}
 
-		if (!this.at().match(TokenType.Brace, "}"))
-			return res.failure(this.at().pos.right, "Expected '}'");
+		if (!this.atMatches(TokenType.Brace, "}"))
+			return res.failure(this.atPos().right, "Expected '}'");
 
 		var rightBrace = this.yum();
 
@@ -326,7 +348,7 @@ export class Parser {
 	// --------------------------------------------
 	public parseExpr() {
 		// FunctionDeclaration
-		if (this.at().match(TokenType.Keyword, "function")) {
+		if (this.atMatches(TokenType.Keyword, "function")) {
 			return this.parseFunctionDeclaration();
 		}
 
@@ -355,7 +377,7 @@ export class Parser {
 		var keyword = this.yum();
 
 		// Anonymous function : function() {}
-		if (this.at().match(TokenType.Paren, "(")) {
+		if (this.atMatches(TokenType.Paren, "(")) {
 			this.yum();
 			
 			params = res.register(this.parseArguments());
@@ -367,8 +389,8 @@ export class Parser {
 			// if (res.error) return res;
 			name = this.yum().value;
 
-			if (!this.at().match(TokenType.Paren, "("))
-				return res.failure(this.at().pos.right, "Expected '('");
+			if (!this.atMatches(TokenType.Paren, "("))
+				return res.failure(this.atPos().right, "Expected '('");
 
 			this.yum();
 
@@ -396,7 +418,7 @@ export class Parser {
 		if (res.error)
 			return res;
 
-		while (this.notEof() && this.at().type == TokenType.LogicalOp) {
+		while (this.notEof() && this.atType() == TokenType.LogicalOp) {
 			var operator = this.yum().value;
 			var right = res.register(this.parseCompExpr());
 
@@ -422,7 +444,7 @@ export class Parser {
 		if (res.error)
 			return res;
 
-		while (this.notEof() && this.at().type == TokenType.CompOp) {
+		while (this.notEof() && this.atType() == TokenType.CompOp) {
 			var operator = this.yum().value;
 			var right = res.register(this.parseAdditiveExpr());
 
@@ -452,8 +474,8 @@ export class Parser {
 
 		while
 			(this.notEof()
-			&& this.at().type == TokenType.Operator
-			&& operators.includes(this.at().value)
+			&& this.atType() == TokenType.Operator
+			&& operators.includes(this.atValue())
 		) {
 			var operator = this.yum().value;
 			var right = res.register(this.parseMultiplicativeExpr());
@@ -483,8 +505,8 @@ export class Parser {
 
 		while
 			(this.notEof()
-			&& this.at().type == TokenType.Operator
-			&& operators.includes(this.at().value)
+			&& this.atType() == TokenType.Operator
+			&& operators.includes(this.atValue())
 		) {
 			var operator = this.yum().value;
 			var right = res.register(this.parseCallExpr());
@@ -512,7 +534,7 @@ export class Parser {
 		if (res.error)
 			return res;
 
-		if (this.at().match(TokenType.Paren, "(")) {
+		if (this.atMatches(TokenType.Paren, "(")) {
 			this.yum();
 			var args = res.register(this.parseArguments());
 
@@ -520,7 +542,7 @@ export class Parser {
 				return res;
 
 			var leftPos = ident.pos.left;
-			var rightPos = this.at().pos.left;
+			var rightPos = this.atPos().left;
 
 			return res.success(
 				new nodes.CallExprNode(ident, args)
@@ -562,7 +584,7 @@ export class Parser {
 			}
 
 			// VarAssignment
-			if (this.at().match(TokenType.Symbol, "=")) {
+			if (this.atMatches(TokenType.Symbol, "=")) {
 				res.register(this.yum());
 				var value = res.register(this.parseExpr());
 				if (res.error) return res;
@@ -577,6 +599,37 @@ export class Parser {
 			// Identifier
 			return res.success(
 				new nodes.IdentifierNode(token.value)
+					.setPos(leftPos, rightPos));
+
+		// ArrayLiteral
+		} else if (token.match(TokenType.Bracket, "[")) {
+			var values: any[] = [];
+
+			while (this.notEof() && !this.atMatches(TokenType.Bracket, "]")) {
+				var value = res.register(this.parseExpr());
+				if (res.error) return res;
+
+				values.push(value);
+
+				if (!this.atMatches(TokenType.Symbol, ",")
+					&& !this.atMatches(TokenType.Bracket, "]")
+				)
+					return res.failure(this.atPos().right, `Expected ',' or ']'`);
+
+				this.yum();
+
+				if (this.atMatches(TokenType.Bracket, "]")) {
+					break;
+				}
+			}
+
+			if (this.atMatches(TokenType.Bracket, "]"))
+				this.yum();
+
+			rightPos = this.atPos().right;
+
+			return res.success(
+				new nodes.ArrayLiteralNode(values)
 					.setPos(leftPos, rightPos));
 
 		// ------------------------------------------------------------------------------------------
@@ -599,12 +652,12 @@ export class Parser {
 			if (res.error)
 				return res;
 
-			if (this.at().match(TokenType.Paren, ")")) {
+			if (this.atMatches(TokenType.Paren, ")")) {
 				res.register(this.yum());
 				return res.success(node);
 			}
 
-			return res.failure(this.at().pos.right, "Expected ')'");
+			return res.failure(this.atPos().right, "Expected ')'");
 		}
 
 		// return an error

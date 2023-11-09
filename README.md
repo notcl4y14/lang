@@ -5,7 +5,7 @@ Just a language that's still under development. If you still want to try it out,
    - Via Git: `git clone https://github.com/notcl4y14/lang.git`
    - Via GitHub: Click the `<> Code` button, and then `Download ZIP`
 2. Type in command line `npm install` (You should have node.js installed)
-   - Since this is written in typescript, type also `npm install -g ts-node` to run it
+   - Since this is written in typescript, type also `npm install -g ts-node`
 3. Now to run it, type `lang %*`, %* replace with arguments
    - If you don't have Windows, then type `ts-node --project ./tsconfig.json . %*`, %* replace with arguments
 

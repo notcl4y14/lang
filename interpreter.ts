@@ -88,6 +88,11 @@ export interface RuntimeValue {
 	value: any;
 }
 
+export interface ArrayRuntimeValue {
+	type: string;
+	values: any[];
+}
+
 export interface FunctionRuntimeValue {
 	type: string;
 	params: any[],
@@ -103,32 +108,49 @@ export class Interpreter {
 			return this.visit_Program(node as nodes.ProgramNode, env);
 		} else if (node.type == "NumericLiteral") {
 			return this.visit_NumericLiteral(node as nodes.NumericLiteralNode);
+
 		} else if (node.type == "StringLiteral") {
 			return this.visit_StringLiteral(node as nodes.StringLiteralNode);
+
 		} else if (node.type == "Identifier") {
 			return this.visit_Identifier(node as nodes.IdentifierNode, env);
+
+		} else if (node.type == "ArrayLiteral") {
+			return this.visit_ArrayLiteral(node as nodes.ArrayLiteralNode, env);
+
 		} else if (node.type == "Literal") {
 			return this.visit_Literal(node as nodes.LiteralNode, env);
+
 		} else if (node.type == "IfStatement") {
 			return this.visit_IfStatement(node as nodes.IfStatementNode, env);
+
 		} else if (node.type == "ForStatement") {
 			return this.visit_ForStatement(node as nodes.ForStatementNode, env);
+
 		} else if (node.type == "WhileStatement") {
 			return this.visit_WhileStatement(node as nodes.WhileStatementNode, env);
+
 		} else if (node.type == "BlockStatement") {
 			return this.visit_BlockStatement(node as nodes.BlockStatementNode, env);
+
 		} else if (node.type == "VarDeclaration") {
 			return this.visit_VarDeclaration(node as nodes.VarDeclarationNode, env);
+
 		} else if (node.type == "FunctionDeclaration") {
 			return this.visit_FunctionDeclaration(node as nodes.FunctionDeclarationNode, env);
+
 		} else if (node.type == "CallExpr") {
 			return this.visit_CallExpr(node as nodes.CallExprNode, env);
+
 		} else if (node.type == "VarAssignment") {
 			return this.visit_VarAssignment(node as nodes.VarAssignmentNode, env);
+
 		} else if (node.type == "UnaryExpr") {
 			return this.visit_UnaryExpr(node as nodes.UnaryExprNode, env);
+
 		} else if (node.type == "LogicalExpr") {
 			return this.visit_LogicalExpr(node as nodes.LogicalExprNode, env);
+
 		} else if (node.type == "BinaryExpr") {
 			return this.visit_BinaryExpr(node as nodes.BinaryExprNode, env);
 		}
@@ -176,6 +198,10 @@ export class Interpreter {
 
 	public value_boolean(value: boolean) {
 		return this.value("boolean", value);
+	}
+
+	public value_array(values: any[]) {
+		return {type: "array", values} as ArrayRuntimeValue;
 	}
 
 	// public value_function(block: nodes.BlockStatementNode, call: Function) {
@@ -226,6 +252,18 @@ export class Interpreter {
 		// var resultVar = res.register(this.visit(variable, env));
 
 		return res.success(variable);
+	}
+
+	public visit_ArrayLiteral(node: nodes.ArrayLiteralNode, env: Environment) {
+		var res = new RuntimeResult();
+		var values = [];
+
+		for (var i = 0; i < node.values.length; i += 1) {
+			values.push(res.register(this.visit(node.values[i], env)));
+			if (res.error) return res;
+		}
+
+		return res.success(this.value_array(values));
 	}
 
 	public visit_Literal(node: nodes.LiteralNode, env: Environment) {

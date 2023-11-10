@@ -1,5 +1,6 @@
 import { Position } from "./position";
 import { Error } from "./error";
+import { Colors } from "./colors";
 import * as nodes from "./nodes";
 
 export class Environment {
@@ -46,6 +47,8 @@ export class Environment {
 	}
 }
 
+// ------------------------------------------------------------------------------------------
+
 export class RuntimeResult {
 	public value: any;
 	public error: Error;
@@ -83,6 +86,8 @@ export class RuntimeResult {
 	}
 }
 
+// ------------------------------------------------------------------------------------------
+
 export interface RuntimeValue {
 	type: string;
 	value: any;
@@ -100,6 +105,73 @@ export interface FunctionRuntimeValue {
 	call: Function;
 	env: Environment;
 }
+
+// ------------------------------------------------------------------------------------------
+
+export function RT_toBoolean(value: any) {
+	if (!value) return;
+
+	return (
+			!(value.type == "undefined"
+			|| value.type == "null"
+			|| (value.type === "boolean" && value.value == false)));
+}
+
+export function RT_toString(rtValue: any) {
+	if (!rtValue) return Colors.FgGray + RT_value_undefined().type + Colors.Reset;
+
+	var value;
+
+	if (rtValue.type == "string")
+		value = Colors.FgGreen + '"' + rtValue.value + '"' + Colors.Reset;
+
+	else if (rtValue.type == "number" || rtValue.type == "boolean")
+		value = Colors.FgYellow + rtValue.value + Colors.Reset;
+
+	else if (rtValue.type == "undefined")
+		value = Colors.FgGray + rtValue.value + Colors.Reset;
+
+	else if (rtValue.type == "null")
+		value = Colors.FgWhite + rtValue.value + Colors.Reset
+
+	else if (rtValue.type == "array")
+		value = rtValue.values;
+
+	return String(value);
+}
+
+// ------------------------------------------------------------------------------------------
+
+export function RT_value(type: string, value: any = undefined) {
+	var rtValue = {type, value} as RuntimeValue;
+	return rtValue;
+}
+
+export function RT_value_undefined() {
+	return RT_value("undefined");
+}
+
+export function RT_value_null() {
+	return RT_value("null");
+}
+
+export function RT_value_number(value: number) {
+	return RT_value("number", value);
+}
+
+export function RT_value_string(value: string) {
+	return RT_value("string", value);
+}
+
+export function RT_value_boolean(value: boolean) {
+	return RT_value("boolean", value);
+}
+
+export function RT_value_array(values: any[]) {
+	return {type: "array", values} as ArrayRuntimeValue;
+}
+
+// ------------------------------------------------------------------------------------------
 
 export class Interpreter {
 	public visit(node: nodes.Node, env: Environment): any {
@@ -160,56 +232,6 @@ export class Interpreter {
 
 	// ------------------------------------------------------------------------------------------
 
-	public toBoolean(value: any) {
-		if (!value) return;
-
-		return (
-				!(value.type == "undefined"
-				|| value.type == "null"
-				|| (value.type === "boolean" && value.value == false)));
-	}
-
-	// ------------------------------------------------------------------------------------------
-
-	public value(type: string, value: any = undefined) {
-		var rtValue = {type, value} as RuntimeValue;
-
-		// if (value)
-			// rtValue.value = value;
-
-		return rtValue;
-	}
-
-	public value_undefined() {
-		return this.value("undefined");
-	}
-
-	public value_null() {
-		return this.value("null");
-	}
-
-	public value_number(value: number) {
-		return this.value("number", value);
-	}
-
-	public value_string(value: string) {
-		return this.value("string", value);
-	}
-
-	public value_boolean(value: boolean) {
-		return this.value("boolean", value);
-	}
-
-	public value_array(values: any[]) {
-		return {type: "array", values} as ArrayRuntimeValue;
-	}
-
-	// public value_function(block: nodes.BlockStatementNode, call: Function) {
-		// return {type: "function", block, call} as FunctionRuntimeValue;
-	// }
-
-	// ------------------------------------------------------------------------------------------
-
 	public no_visit(node: nodes.Node) {
 		return new RuntimeResult().failure(
 			node.pos.left, `This AST node has not been setup for interpretation yet: ${node.type}`);
@@ -231,12 +253,12 @@ export class Interpreter {
 
 	public visit_NumericLiteral(node: nodes.NumericLiteralNode) {
 		var res = new RuntimeResult();
-		return res.success(this.value_number(node.value));
+		return res.success(RT_value_number(node.value));
 	}
 
 	public visit_StringLiteral(node: nodes.StringLiteralNode) {
 		var res = new RuntimeResult();
-		return res.success(this.value_string(node.value));
+		return res.success(RT_value_string(node.value));
 	}
 
 	public visit_Identifier(node: nodes.IdentifierNode, env: Environment) {
@@ -247,7 +269,7 @@ export class Interpreter {
 			console.log("lol");
 
 		if (!variable)
-			return res.success(this.value_undefined());
+			return res.success(RT_value_undefined());
 
 		// var resultVar = res.register(this.visit(variable, env));
 
@@ -263,7 +285,7 @@ export class Interpreter {
 			if (res.error) return res;
 		}
 
-		return res.success(this.value_array(values));
+		return res.success(RT_value_array(values));
 	}
 
 	public visit_Literal(node: nodes.LiteralNode, env: Environment) {
@@ -271,15 +293,15 @@ export class Interpreter {
 
 		if (["true", "false"].includes(node.value)) {
 			var value = node.value == "true" ? true : false;
-			return res.success(this.value_boolean(value));
+			return res.success(RT_value_boolean(value));
 		}
 
-		return res.success(this.value(String(value)));
+		return res.success(RT_value(String(value)));
 	}
 
 	public visit_IfStatement(node: nodes.IfStatementNode, env: Environment) {
 		var res = new RuntimeResult();
-		var isCondTrue = this.toBoolean(res.register(this.visit(node.condition, env)));
+		var isCondTrue = RT_toBoolean(res.register(this.visit(node.condition, env)));
 		if (res.error) return res;
 
 		var value;
@@ -302,7 +324,7 @@ export class Interpreter {
 		var initVar = res.register(this.visit(node.init, subEnv));
 		if (res.error) return res;
 
-		var isTestTrue = this.toBoolean(res.register(this.visit(node.test, subEnv)));
+		var isTestTrue = RT_toBoolean(res.register(this.visit(node.test, subEnv)));
 		if (res.error) return res;
 
 		var update = node.update;
@@ -318,7 +340,7 @@ export class Interpreter {
 			if (res.error) return res;
 
 			// console.log("Updating the test value...");
-			isTestTrue = this.toBoolean(res.register(this.visit(node.test, subEnv)));
+			isTestTrue = RT_toBoolean(res.register(this.visit(node.test, subEnv)));
 			if (res.error) return res;
 		}
 
@@ -328,7 +350,7 @@ export class Interpreter {
 	public visit_WhileStatement(node: nodes.WhileStatementNode, env: Environment) {
 		var res = new RuntimeResult();
 
-		var isTestTrue = this.toBoolean(res.register(this.visit(node.test, env)));
+		var isTestTrue = RT_toBoolean(res.register(this.visit(node.test, env)));
 		if (res.error) return res;
 
 		var value;
@@ -337,7 +359,7 @@ export class Interpreter {
 			value = res.register(this.visit(node.block, env));
 			if (res.error) return res;
 
-			isTestTrue = this.toBoolean(res.register(this.visit(node.test, env)));
+			isTestTrue = RT_toBoolean(res.register(this.visit(node.test, env)));
 			if (res.error) return res;
 		}
 
@@ -480,12 +502,12 @@ export class Interpreter {
 		var result;
 
 		if (operator == "&&") {
-			result = this.toBoolean(left) && this.toBoolean(right);
+			result = RT_toBoolean(left) && RT_toBoolean(right);
 		} else if (operator == "||") {
-			result = this.toBoolean(left) || this.toBoolean(right);
+			result = RT_toBoolean(left) || RT_toBoolean(right);
 		}
 
-		return res.success(this.value_boolean(result));
+		return res.success(RT_value_boolean(result));
 	}
 
 	public visit_BinaryExpr(node: nodes.BinaryExprNode, env: Environment) {
@@ -544,8 +566,8 @@ export class Interpreter {
 		}
 
 		if (result === true || result === false)
-			return res.success(this.value_boolean(result));
+			return res.success(RT_value_boolean(result));
 
-		return res.success(this.value_number(result));
+		return res.success(RT_value_number(result));
 	}
 }

@@ -12,6 +12,8 @@ Just a language that's still under development. If you still want to try it out,
 # TODO
 - Optimize and make the code cleaner
 - Overcomment interpreter.ts and other uncommented files because Idk why
+- Sort the files and the functions
+- Make some readers for like JSON and converting arrays into a string
 - ~~Make functions to create runtime values~~
 - ~~Make functions for node classes to set position like `new IdentifierNode("lol").setPos(leftPos, rightPos);`~~
 - ~~Change left and right positions for nodes and errors~~

@@ -1,5 +1,5 @@
 let readline = require("readline-sync");
-import { Environment } from "./interpreter";
+import { RT_toString, Environment } from "./interpreter";
 import { run } from "./run";
 import { either } from "./utils/general";
 
@@ -50,8 +50,8 @@ let shell_loop = function() {
 	if (shell_interpreter) args.push("--interpreter");
 
 	var returnValue = run("<stdin>", input, args, shell_env);
-	process.stdout.write("-> ");
-	console.log(returnValue);
+	// process.stdout.write("-> ");
+	console.log(RT_toString(returnValue));
 
 	shell_loop();
 }

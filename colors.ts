@@ -1,3 +1,4 @@
+// https://stackoverflow.com/questions/9781218/how-to-change-node-jss-console-font-color
 var Colors = {
 	Reset: "\x1b[0m",
 	Bright: "\x1b[1m",

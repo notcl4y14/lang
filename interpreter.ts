@@ -2,6 +2,7 @@ import { Position } from "./position";
 import { Error } from "./error";
 import { Colors } from "./colors";
 import * as nodes from "./nodes";
+let utils = require("util");
 
 export class Environment {
 	public variables: any;
@@ -98,6 +99,11 @@ export interface ArrayRuntimeValue {
 	values: any[];
 }
 
+export interface ObjectRuntimeValue {
+	type: string;
+	properties: Map<string, any>;
+}
+
 export interface FunctionRuntimeValue {
 	type: string;
 	params: any[],
@@ -137,6 +143,9 @@ export function RT_toString(rtValue: any) {
 	else if (rtValue.type == "array")
 		value = rtValue.values;
 
+	else if (rtValue.type == "object")
+		value = utils.inspect(rtValue.properties, {showHidden: false, depth: null, colors: true});
+
 	return String(value);
 }
 
@@ -171,6 +180,10 @@ export function RT_value_array(values: any[]) {
 	return {type: "array", values} as ArrayRuntimeValue;
 }
 
+export function RT_value_object(properties: Map<string, any>) {
+	return {type: "object", properties} as ObjectRuntimeValue;
+}
+
 // ------------------------------------------------------------------------------------------
 
 export class Interpreter {
@@ -189,6 +202,9 @@ export class Interpreter {
 
 		} else if (node.type == "ArrayLiteral") {
 			return this.visit_ArrayLiteral(node as nodes.ArrayLiteralNode, env);
+
+		} else if (node.type == "ObjectLiteral") {
+			return this.visit_ObjectLiteral(node as nodes.ObjectLiteralNode, env);
 
 		} else if (node.type == "Literal") {
 			return this.visit_Literal(node as nodes.LiteralNode, env);
@@ -265,9 +281,6 @@ export class Interpreter {
 		var res = new RuntimeResult();
 		var variable = env.lookupVar(node.value);
 
-		if (node.value == "lol")
-			console.log("lol");
-
 		if (!variable)
 			return res.success(RT_value_undefined());
 
@@ -286,6 +299,28 @@ export class Interpreter {
 		}
 
 		return res.success(RT_value_array(values));
+	}
+
+	public visit_ObjectLiteral(node: nodes.ObjectLiteralNode, env: Environment) {
+		var res = new RuntimeResult();
+		var object = RT_value_object(new Map());
+		var properties = Object.fromEntries(node.properties);
+		var keys = Object.keys(properties);
+
+		// https://github.com/tlaceby/guide-to-interpreters-series/blob/main/ep08-object-literals/runtime/eval/expressions.ts
+		for (var i = 0; i < node.properties.size; i += 1) {
+			var key = keys[i];
+			var value = node.properties.get(key);
+
+			var runtimeVal = (value == undefined)
+				? env.lookupVar(key)
+				: res.register(this.visit(value, env));
+			if (res.error) return res;
+
+			object.properties.set(key, runtimeVal);
+		}
+
+		return res.success(object);
 	}
 
 	public visit_Literal(node: nodes.LiteralNode, env: Environment) {
@@ -541,14 +576,8 @@ export class Interpreter {
 
 		if (["<", ">", "<=", ">="].includes(node.operator)) {
 
-			if (left.type != "number" || right.type != "number") {
-				// var _node = left.type != "number"
-					// ? left
-					// : right;
-
-				// console.log(left);
+			if (left.type != "number" || right.type != "number")
 				return res.failure(node.left.pos.right, "Cannot compare non-number value " + left.type + ", " + right.type);
-			}
 		}
 
 		if (operator == "<") {

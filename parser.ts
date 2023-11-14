@@ -439,14 +439,14 @@ export class Parser {
 	// Comparison Expression
 	public parseCompExpr() {
 		var res = new ParseResult();
-		var left = res.register(this.parseAdditiveExpr());
+		var left = res.register(this.parseObjectExpr());
 
 		if (res.error)
 			return res;
 
 		while (this.notEof() && this.atType() == TokenType.CompOp) {
 			var operator = this.yum().value;
-			var right = res.register(this.parseAdditiveExpr());
+			var right = res.register(this.parseObjectExpr());
 
 			if (res.error)
 				return res;
@@ -460,6 +460,67 @@ export class Parser {
 		}
 
 		return res.success(left);
+	}
+
+
+	// Object Literal
+	public parseObjectExpr() {
+		if (!this.atMatches(TokenType.Brace, "{")) {
+			return this.parseAdditiveExpr();
+		}
+
+		var res = new ParseResult();
+		var leftBrace = this.yum();
+
+		var properties = new Map();
+
+		while (this.notEof() && !this.atMatches(TokenType.Brace, "}")) {
+			var key, value;
+
+			key = res.register(this.parseExpr());
+			if (res.error) return res;
+
+			if (key.type !== "Identifier" && key.type !== "StringLiteral")
+				return res.failure(key.pos.left, "Expected identifier or string");
+
+			// { key }
+			if (this.atMatches(TokenType.Symbol, ",") || this.atMatches(TokenType.Brace, "}")) {
+				if (this.atMatches(TokenType.Symbol, ","))
+					this.yum();
+
+				properties.set(key.value, null);
+				continue;
+			}
+
+			// { key: value }
+			if (!this.atMatches(TokenType.Symbol, ":"))
+				return res.failure(this.atPos().right, "Expected ':', ',' or '}'");
+
+			this.yum();
+
+			value = res.register(this.parseExpr());
+			if (res.error) return res;
+
+			properties.set(key.value, value);
+
+			if (!this.atMatches(TokenType.Symbol, ",") && !this.atMatches(TokenType.Brace, "}"))
+				return res.failure(this.atPos().right, "Expected ',' or '}'");
+
+			if (this.atMatches(TokenType.Symbol, ","))
+				this.yum();
+		}
+
+		if (!this.atMatches(TokenType.Brace, "}"))
+			return res.failure(this.atPos().right, "Expected '}'");
+
+		var rightBrace = this.yum();
+
+		var leftPos = leftBrace.pos.left;
+		var rightPos = rightBrace.pos.right;
+
+		return res.success(
+			new nodes.ObjectLiteralNode(properties)
+				.setPos(leftPos, rightPos));
 	}
 
 	// TODO: fix additive and mult expressions being ignored when using them again like 1 + 2 + 3 and 2 * 3 / 4

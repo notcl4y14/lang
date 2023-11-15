@@ -9,6 +9,8 @@ Just a language that's still under development. If you still want to try it out,
 3. Now to run it, type `lang %*`, %* replace with arguments
    - If you don't have Windows, then type `ts-node --project ./tsconfig.json . %*`, %* replace with arguments
 
+~~The code is so messed up but I'm not sure if I have to rewrite the lang again rn~~
+
 # TODO
 - Optimize and make the code cleaner
 - Overcomment interpreter.ts and other uncommented files because Idk why

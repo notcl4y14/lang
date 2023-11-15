@@ -1,5 +1,6 @@
 function x(lol) {
 	writeln(lol)
+	return lol
 }
 
 x("lol")

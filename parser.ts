@@ -154,6 +154,9 @@ export class Parser {
 		// WhileStatement
 		} else if (this.atMatches(TokenType.Keyword, "while")) {
 			return this.parseWhileStatement();
+		// ReturnStatement
+		} else if (this.atMatches(TokenType.Keyword, "return")) {
+			return this.parseReturnStatement();
 		}
 
 		return this.parseExpr();
@@ -313,6 +316,21 @@ export class Parser {
 		return res.success((new nodes.WhileStatementNode(test, block).setPos(leftPos, rightPos)));
 	}
 
+	// ReturnStatement
+	public parseReturnStatement() {
+		var res = new ParseResult();
+		var keyword = this.yum();
+		var argument = res.register(this.parseExpr());
+		if (res.error) return res;
+
+		var leftPos = keyword.pos.left;
+		var rightPos = argument.pos.right;
+
+		return res.success(
+			new nodes.ReturnStatementNode(argument)
+				.setPos(leftPos, rightPos));
+	}
+
 	// BlockStatement
 	public parseBlockStatement() {
 		var res = new ParseResult();
@@ -358,7 +376,7 @@ export class Parser {
 	/**
 	 * Why is function declaration node
 	 * parsed as an expression?
-	 * Well, I though of how could you
+	 * Well, I thought of how could you
 	 * declare an anonymous function
 	 * in the variable declaration statement
 	 * like "let x = function() {}"

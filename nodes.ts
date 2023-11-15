@@ -175,6 +175,16 @@ export class VarDeclarationNode extends Node {
 	}
 }
 
+export class ReturnStatementNode extends Node {
+	public type: string = "ReturnStatement";
+	public argument: Node;
+
+	public constructor(argument: Node) {
+		super();
+		this.argument = argument;
+	}
+}
+
 export class FunctionDeclarationNode extends Node {
 	public type: string = "FunctionDeclaration";
 	public name?: string;

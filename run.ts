@@ -1,6 +1,6 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
-import { Interpreter, Environment, FunctionRuntimeValue } from "./interpreter";
+import { Interpreter, Environment, RT_toString, FunctionRuntimeValue } from "./interpreter";
 let utils = require("util");
 
 export function run(filename: string, code: string, args: string[] = [], overrideEnv: Environment = new Environment()) {
@@ -28,11 +28,20 @@ export function run(filename: string, code: string, args: string[] = [], overrid
 
 	var env = overrideEnv;
 
-	env.declareVar("writeln", {type: "function", params: ["value"], body: null, env: null, call: (args: any[], env: Environment) => {
-		var value = args[0];
-		console.log(value.value);
-		return {type: "undefined"};
-	}} as FunctionRuntimeValue);
+	var function_writeln;
+	function_writeln = {
+		type: "function",
+		params: ["value"],
+		body: null,
+		env: null,
+		call: (args: any[], env: Environment) => {
+			var value = env.lookupVar("value");
+			console.log(RT_toString(value));
+			return {type: "undefined"};
+		}
+	} as FunctionRuntimeValue;
+
+	env.declareVar("writeln", function_writeln);
 	
 	var interpreter = new Interpreter();
 	var result = interpreter.visit(ast.node, env);

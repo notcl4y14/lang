@@ -224,6 +224,9 @@ export class Interpreter {
 		} else if (node.type == "VarDeclaration") {
 			return this.visit_VarDeclaration(node as nodes.VarDeclarationNode, env);
 
+		} else if (node.type == "ReturnStatement") {
+			return this.visit_ReturnStatement(node as nodes.ReturnStatementNode, env);
+
 		} else if (node.type == "FunctionDeclaration") {
 			return this.visit_FunctionDeclaration(node as nodes.FunctionDeclarationNode, env);
 
@@ -430,6 +433,14 @@ export class Interpreter {
 		return res.success(variable);
 	}
 
+	public visit_ReturnStatement(node: nodes.ReturnStatementNode, env: Environment) {
+		var res = new RuntimeResult();
+		var argument = res.register(this.visit(node.argument, env));
+		if (res.error) return res;
+
+		return res.success(argument);
+	}
+
 	public visit_FunctionDeclaration(node: nodes.FunctionDeclarationNode, env: Environment) {
 		var res = new RuntimeResult();
 
@@ -485,9 +496,17 @@ export class Interpreter {
 
 		var _env = new Environment(env);
 
+		console.log(func);
+		// console.log(func.params);
+		console.log(args);
+
 		for (var i = 0; i < func.params.length; i += 1) {
-			_env.declareVar(func.params[i].value, args[i]);
+			var variable = _env.declareVar(func.params[i].value, args[i]);
+			if (!variable)
+				return res.failure(node.pos.right, `Variable ${func.params[i].value} already declared`);
 		}
+
+		console.log(_env);
 
 		var value = res.register(func.call(args, _env));
 		if (res.error) return res;

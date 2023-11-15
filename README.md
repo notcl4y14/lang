@@ -23,3 +23,8 @@ The code is really messed up. Almost like the Source engine.
 - ~~Change left and right positions for nodes and errors~~
 - ~~Change the right position for tokens in the lexer~~
 - Probably make getting filename not from the position
+
+# CREDITS
+Thanks to CodePulse and tylerlaceby for tutorials! (Also helped me understand and realize how does the languages work)
+- CodePulse: https://www.youtube.com/@CodePulse
+- tylerlaceby: https://www.youtube.com/@tylerlaceby

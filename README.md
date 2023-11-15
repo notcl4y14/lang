@@ -10,6 +10,7 @@ Just a language that's still under development. If you still want to try it out,
    - If you don't have Windows, then type `ts-node --project ./tsconfig.json . %*`, %* replace with arguments
 
 ~~The code is so messed up but I'm not sure if I have to rewrite the lang again rn~~
+The code is really messed up. Almost like the Source engine.
 
 # TODO
 - Optimize and make the code cleaner

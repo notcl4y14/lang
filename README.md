@@ -25,6 +25,6 @@ The code is really messed up. Almost like the Source engine. So it's archived.
 - Probably make getting filename not from the position
 
 # CREDITS
-Thanks to CodePulse and tylerlaceby for tutorials! (Also helped me understand and realize how does the languages work)
+Thanks to CodePulse and tylerlaceby for tutorials! (Also helped me understand and realize how do the languages work)
 - CodePulse: https://www.youtube.com/@CodePulse
 - tylerlaceby: https://www.youtube.com/@tylerlaceby
